@@ -27,11 +27,22 @@ Once the console application is complete and tested, a React-based web interface
 
 ```
 BookingAPP/
-├── src/           # TypeScript source files
-├── dist/          # Compiled JavaScript output
-├── node_modules/  # Dependencies
-├── .cursorrules   # Project-specific rules and guidelines
-└── README.md      # This file
+├── src/                    # TypeScript source files
+│   ├── models/             # Data models (Client, Reservation)
+│   ├── services/           # Business logic services
+│   │   └── __tests__/      # Service unit tests
+│   ├── storage/            # Data storage implementations
+│   │   └── __tests__/      # Storage unit tests
+│   ├── console/            # Console interface
+│   └── index.ts            # Application entry point
+├── dist/                   # Compiled JavaScript output
+├── coverage/               # Test coverage reports (generated)
+├── node_modules/           # Dependencies
+├── jest.config.js          # Jest configuration
+├── tsconfig.json           # TypeScript configuration
+├── package.json            # Project dependencies and scripts
+├── .cursorrules            # Project-specific rules and guidelines
+└── README.md               # This file
 ```
 
 ## Getting Started
@@ -62,6 +73,29 @@ npm run dev
 # Type checking
 npm run type-check
 ```
+
+## Testing
+
+The project uses Jest for unit testing. Tests are located in `__tests__` directories alongside the source files.
+
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage report
+npm run test:coverage
+```
+
+### Test Coverage
+
+Tests are provided for:
+- **Storage Layer**: `InMemoryStorage` - Tests all CRUD operations for clients and reservations
+- **Service Layer**: 
+  - `ClientService` - Tests client management with validation (email format, duplicates)
+  - `ReservationService` - Tests reservation management with validation (dates, guests, client existence)
 
 ## License
 

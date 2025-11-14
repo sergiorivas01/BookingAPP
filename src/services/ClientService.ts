@@ -1,6 +1,6 @@
 import { Client, CreateClientDTO, UpdateClientDTO } from '../models/Client';
 import { IStorage } from '../storage/Storage';
-import { v4 as uuidv4 } from 'uuid';
+import { generateId } from '../utils/idGenerator';
 
 /**
  * Service for managing client operations
@@ -26,7 +26,7 @@ export class ClientService {
 
     const now = new Date();
     const client: Client = {
-      id: uuidv4(),
+      id: generateId(),
       name: dto.name,
       email: dto.email,
       phone: dto.phone,
@@ -34,7 +34,9 @@ export class ClientService {
       updatedAt: now,
     };
 
+    console.log('Saving client to storage:', client.id);
     await this.storage.saveClient(client);
+    console.log('Client saved successfully:', client.id);
     return client;
   }
 
@@ -82,18 +84,6 @@ export class ClientService {
 
     await this.storage.updateClient(id, updatedClient);
     return updatedClient;
-  }
-
-  /**
-   * Delete a client
-   */
-  async deleteClient(id: string): Promise<boolean> {
-    const client = await this.storage.getClient(id);
-    if (!client) {
-      throw new Error(`Client with id ${id} not found`);
-    }
-
-    return this.storage.deleteClient(id);
   }
 
   /**

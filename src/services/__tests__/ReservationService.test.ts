@@ -32,6 +32,7 @@ describe('ReservationService', () => {
       getReservation: jest.fn(),
       getAllReservations: jest.fn(),
       getReservationsByClient: jest.fn(),
+      getReservationsByProperty: jest.fn(),
       updateReservation: jest.fn(),
       deleteReservation: jest.fn(),
     };

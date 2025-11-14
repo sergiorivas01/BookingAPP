@@ -54,6 +54,12 @@ export class InMemoryStorage implements IStorage {
     );
   }
 
+  async getReservationsByProperty(propertyId: string): Promise<Reservation[]> {
+    return Array.from(this.reservations.values()).filter(
+      (reservation) => reservation.propertyId === propertyId
+    );
+  }
+
   async updateReservation(id: string, reservation: Reservation): Promise<void> {
     if (!this.reservations.has(id)) {
       throw new Error(`Reservation with id ${id} not found`);

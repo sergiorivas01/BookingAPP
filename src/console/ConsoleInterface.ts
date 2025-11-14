@@ -104,13 +104,15 @@ export class ConsoleInterface {
   private async showReservationMenu(): Promise<void> {
     console.log('\nReservation Management:');
     console.log('1. Create Reservation');
-    console.log('2. Get Reservation by ID');
+    console.log('2. Get Reservation by ID (with client info)');
     console.log('3. Get Reservations by Client');
-    console.log('4. Update Reservation');
-    console.log('5. Confirm Reservation');
-    console.log('6. Cancel Reservation');
-    console.log('7. Delete Reservation');
-    console.log('8. Back to Main Menu');
+    console.log('4. Get Reservations by Property');
+    console.log('5. Get Property Reservations with Clients');
+    console.log('6. Update Reservation');
+    console.log('7. Confirm Reservation');
+    console.log('8. Cancel Reservation');
+    console.log('9. Delete Reservation');
+    console.log('10. Back to Main Menu');
     console.log('');
 
     const choice = await this.question('Select an option: ');
@@ -126,18 +128,24 @@ export class ConsoleInterface {
         await this.getReservationsByClient();
         break;
       case '4':
-        await this.updateReservation();
+        await this.getReservationsByProperty();
         break;
       case '5':
-        await this.confirmReservation();
+        await this.getPropertyReservationsWithClients();
         break;
       case '6':
-        await this.cancelReservation();
+        await this.updateReservation();
         break;
       case '7':
-        await this.deleteReservation();
+        await this.confirmReservation();
         break;
       case '8':
+        await this.cancelReservation();
+        break;
+      case '9':
+        await this.deleteReservation();
+        break;
+      case '10':
         await this.showMainMenu();
         break;
       default:
@@ -248,12 +256,21 @@ export class ConsoleInterface {
 
   private async getReservationById(): Promise<void> {
     try {
-      const id = await this.question('Reservation ID: ');
-      const reservation = await this.reservationService.getReservation(id);
-      if (reservation) {
-        this.displayReservation(reservation);
+      const id = (await this.question('Reservation ID: ')).trim();
+      const result = await this.reservationService.getReservationWithClient(id);
+      
+      console.log('\n=== Reservation Details ===');
+      this.displayReservation(result.reservation);
+      
+      if (result.client) {
+        console.log('=== Client Information ===');
+        console.log(`  Client ID: ${result.client.id}`);
+        console.log(`  Name: ${result.client.name}`);
+        console.log(`  Email: ${result.client.email}`);
+        console.log(`  Phone: ${result.client.phone}`);
+        console.log('');
       } else {
-        console.log('Reservation not found.');
+        console.log('Client information not found for this reservation.');
       }
     } catch (error) {
       console.error(`Error: ${(error as Error).message}`);
@@ -263,7 +280,7 @@ export class ConsoleInterface {
 
   private async getReservationsByClient(): Promise<void> {
     try {
-      const clientId = await this.question('Client ID: ');
+      const clientId = (await this.question('Client ID: ')).trim();
       const reservations =
         await this.reservationService.getReservationsByClient(clientId);
       if (reservations.length === 0) {
@@ -273,6 +290,59 @@ export class ConsoleInterface {
         reservations.forEach((reservation) =>
           this.displayReservation(reservation)
         );
+      }
+    } catch (error) {
+      console.error(`Error: ${(error as Error).message}`);
+    }
+    await this.showReservationMenu();
+  }
+
+  private async getReservationsByProperty(): Promise<void> {
+    try {
+      const propertyId = (await this.question('Property ID: ')).trim();
+      const reservations =
+        await this.reservationService.getReservationsByProperty(propertyId);
+      if (reservations.length === 0) {
+        console.log('No reservations found for this property.');
+      } else {
+        console.log(`\nFound ${reservations.length} reservation(s) for property ${propertyId}:`);
+        reservations.forEach((reservation) =>
+          this.displayReservation(reservation)
+        );
+      }
+    } catch (error) {
+      console.error(`Error: ${(error as Error).message}`);
+    }
+    await this.showReservationMenu();
+  }
+
+  private async getPropertyReservationsWithClients(): Promise<void> {
+    try {
+      const propertyId = (await this.question('Property ID: ')).trim();
+      const reservationsWithClients =
+        await this.reservationService.getPropertyReservationsWithClients(propertyId);
+      
+      if (reservationsWithClients.length === 0) {
+        console.log('No reservations found for this property.');
+      } else {
+        console.log(`\n=== Property ${propertyId} Reservations ===`);
+        console.log(`Found ${reservationsWithClients.length} reservation(s):\n`);
+        
+        reservationsWithClients.forEach((item, index) => {
+          console.log(`--- Reservation ${index + 1} ---`);
+          this.displayReservation(item.reservation);
+          
+          if (item.client) {
+            console.log('  Client Details:');
+            console.log(`    Name: ${item.client.name}`);
+            console.log(`    Email: ${item.client.email}`);
+            console.log(`    Phone: ${item.client.phone}`);
+            console.log(`    Client ID: ${item.client.id}`);
+          } else {
+            console.log('  Client information not available');
+          }
+          console.log('');
+        });
       }
     } catch (error) {
       console.error(`Error: ${(error as Error).message}`);

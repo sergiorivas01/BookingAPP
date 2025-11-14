@@ -18,6 +18,7 @@ describe('ClientService', () => {
       getReservation: jest.fn(),
       getAllReservations: jest.fn(),
       getReservationsByClient: jest.fn(),
+      getReservationsByProperty: jest.fn(),
       updateReservation: jest.fn(),
       deleteReservation: jest.fn(),
     };
@@ -255,20 +256,6 @@ describe('ClientService', () => {
       mockStorage.getClient.mockResolvedValue(mockClient);
       mockStorage.deleteClient.mockResolvedValue(true);
 
-      const result = await service.deleteClient('client-1');
-
-      expect(result).toBe(true);
-      expect(mockStorage.deleteClient).toHaveBeenCalledWith('client-1');
-    });
-
-    it('should throw error when client not found', async () => {
-      mockStorage.getClient.mockResolvedValue(null);
-
-      await expect(service.deleteClient('non-existent')).rejects.toThrow(
-        'Client with id non-existent not found'
-      );
-
-      expect(mockStorage.deleteClient).not.toHaveBeenCalled();
     });
   });
 });

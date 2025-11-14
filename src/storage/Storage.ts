@@ -19,6 +19,7 @@ export interface IStorage {
   getReservation(id: string): Promise<Reservation | null>;
   getAllReservations(): Promise<Reservation[]>;
   getReservationsByClient(clientId: string): Promise<Reservation[]>;
+  getReservationsByProperty(propertyId: string): Promise<Reservation[]>;
   updateReservation(id: string, reservation: Reservation): Promise<void>;
   deleteReservation(id: string): Promise<boolean>;
 }

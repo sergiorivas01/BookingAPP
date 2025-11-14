@@ -1,4 +1,8 @@
-import { InMemoryStorage } from './storage/InMemoryStorage';
+// Load environment variables first
+import 'dotenv/config';
+
+import { PostgreSQLStorage } from '../backend/database/PostgreSQLStorage';
+import { initializePool, closePool } from '../backend/database/connection';
 import { ClientService } from './services/ClientService';
 import { ReservationService } from './services/ReservationService';
 import { ConsoleInterface } from './console/ConsoleInterface';
@@ -8,21 +12,46 @@ import { ConsoleInterface } from './console/ConsoleInterface';
  * Initializes services and starts the console interface
  */
 async function main(): Promise<void> {
-  // Initialize storage (in-memory for now)
-  const storage = new InMemoryStorage();
+  try {
+    // Initialize database connection pool
+    console.log('Initializing database connection...');
+    initializePool();
+    console.log('Database connection established.');
 
-  // Initialize services
-  const clientService = new ClientService(storage);
-  const reservationService = new ReservationService(storage);
+    // Initialize PostgreSQL storage
+    const storage = new PostgreSQLStorage();
 
-  // Initialize and start console interface
-  const consoleInterface = new ConsoleInterface(clientService, reservationService);
-  await consoleInterface.start();
+    // Initialize services
+    const clientService = new ClientService(storage);
+    const reservationService = new ReservationService(storage);
+
+    // Setup graceful shutdown handlers
+    const shutdown = async () => {
+      console.log('\nClosing database connection...');
+      await closePool();
+      console.log('Database connection closed.');
+      process.exit(0);
+    };
+
+    process.on('SIGINT', shutdown); // Ctrl+C
+    process.on('SIGTERM', shutdown); // Termination signal
+
+    // Initialize and start console interface
+    const consoleInterface = new ConsoleInterface(clientService, reservationService);
+    console.log('Starting console interface...');
+    await consoleInterface.start();
+    console.log('Console interface ended (this should not happen until exit)');
+  } catch (error) {
+    console.error('Error initializing application:', error);
+    await closePool();
+    process.exit(1);
+  }
 }
 
 // Start the application
-main().catch((error) => {
+main().catch(async (error) => {
   console.error('Fatal error:', error);
+  await closePool();
   process.exit(1);
 });
 

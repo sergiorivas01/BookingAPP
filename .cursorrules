@@ -1,0 +1,42 @@
+# Project Rules
+
+## Language and Code Standards
+
+- Always work in English for code, comments, and documentation
+- Primary programming language: TypeScript
+- Compilation: Node.js
+- Use TypeScript strict mode
+- Follow TypeScript best practices and conventions
+
+## Project Overview
+
+This is a reservation and client management application.
+
+## Development Phases
+
+1. **Phase 1 - Console Application**: Start as a console/CLI application
+
+   - Focus on core business logic
+   - Implement reservation and client management features
+   - Use Node.js runtime for execution
+
+2. **Phase 2 - React Client**: After console app is ready
+   - Build the client-side interface using React
+   - Maintain separation between business logic and UI
+   - Ensure the console app logic can be reused/refactored for the React client
+
+## Code Organization
+
+- Keep business logic separate from presentation
+- Structure code to be reusable between console and React implementations
+- Use proper TypeScript types and interfaces
+- Implement proper error handling
+
+## Best Practices
+
+- Write clean, maintainable code
+- Use meaningful variable and function names
+- Add comments where necessary (in English)
+- Follow consistent code formatting
+- Implement proper error handling
+- Consider scalability from the beginning

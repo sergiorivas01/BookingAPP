@@ -1,5 +1,6 @@
 import { Client } from '../models/Client';
 import { Reservation } from '../models/Reservation';
+import { Property } from '../Properties/Property';
 
 /**
  * Interface for data storage operations
@@ -22,5 +23,12 @@ export interface IStorage {
   getReservationsByProperty(propertyId: string): Promise<Reservation[]>;
   updateReservation(id: string, reservation: Reservation): Promise<void>;
   deleteReservation(id: string): Promise<boolean>;
+
+  // Property operations
+  saveProperty(property: Property): Promise<void>;
+  getProperty(id: string): Promise<Property | null>;
+  getAllProperties(): Promise<Property[]>;
+  updateProperty(id: string, property: Property): Promise<void>;
+  deleteProperty(id: string): Promise<boolean>;
 }
 

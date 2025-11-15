@@ -13,6 +13,11 @@ import { ConsoleInterface } from './console/ConsoleInterface';
  */
 async function main(): Promise<void> {
   try {
+    // Verify .env is loaded
+    if (process.env.DB_USER || process.env.DATABASE_URL) {
+      console.log('✓ Environment variables loaded from .env file');
+    }
+    
     // Initialize database connection pool
     console.log('Initializing database connection...');
     initializePool();
@@ -37,7 +42,7 @@ async function main(): Promise<void> {
     process.on('SIGTERM', shutdown); // Termination signal
 
     // Initialize and start console interface
-    const consoleInterface = new ConsoleInterface(clientService, reservationService);
+    const consoleInterface = new ConsoleInterface(clientService, reservationService, storage);
     console.log('Starting console interface...');
     await consoleInterface.start();
     console.log('Console interface ended (this should not happen until exit)');

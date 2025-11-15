@@ -289,5 +289,125 @@ export class PostgreSQLStorage implements IStorage {
     await query('DELETE FROM reservations WHERE id = $1', [id]);
     return true;
   }
+
+  // Property operations
+  async saveProperty(property: Property): Promise<void> {
+    await query(
+      `INSERT INTO properties (id, name, description, specifications, price, availability, availability_info, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       ON CONFLICT (id) DO UPDATE SET
+         name = EXCLUDED.name,
+         description = EXCLUDED.description,
+         specifications = EXCLUDED.specifications,
+         price = EXCLUDED.price,
+         availability = EXCLUDED.availability,
+         availability_info = EXCLUDED.availability_info,
+         updated_at = EXCLUDED.updated_at`,
+      [
+        property.id,
+        property.name,
+        property.description || null,
+        JSON.stringify(property.specifications),
+        property.price,
+        property.availability,
+        property.availabilityInfo ? JSON.stringify(property.availabilityInfo) : null,
+        property.createdAt,
+        property.updatedAt,
+      ]
+    );
+  }
+
+  async getProperty(id: string): Promise<Property | null> {
+    const rows = await query<{
+      id: string;
+      name: string;
+      description: string | null;
+      specifications: string;
+      price: number;
+      availability: string;
+      availability_info: string | null;
+      created_at: Date;
+      updated_at: Date;
+    }>('SELECT * FROM properties WHERE id = $1', [id]);
+
+    if (rows.length === 0) {
+      return null;
+    }
+
+    const row = rows[0];
+    return {
+      id: row.id,
+      name: row.name,
+      description: row.description || undefined,
+      specifications: typeof row.specifications === 'string' 
+        ? JSON.parse(row.specifications) 
+        : row.specifications,
+      price: parseFloat(row.price.toString()),
+      availability: row.availability as AvailabilityStatus,
+      availabilityInfo: row.availability_info 
+        ? (typeof row.availability_info === 'string' 
+            ? JSON.parse(row.availability_info) 
+            : row.availability_info)
+        : undefined,
+      createdAt: new Date(row.created_at),
+      updatedAt: new Date(row.updated_at),
+    };
+  }
+
+  async getAllProperties(): Promise<Property[]> {
+    const rows = await query<{
+      id: string;
+      name: string;
+      description: string | null;
+      specifications: string | object;
+      price: number;
+      availability: string;
+      availability_info: string | null;
+      created_at: Date;
+      updated_at: Date;
+    }>('SELECT * FROM properties ORDER BY name ASC');
+
+    return rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      description: row.description || undefined,
+      specifications: typeof row.specifications === 'string' 
+        ? JSON.parse(row.specifications) 
+        : row.specifications,
+      price: parseFloat(row.price.toString()),
+      availability: row.availability as AvailabilityStatus,
+      availabilityInfo: row.availability_info 
+        ? (typeof row.availability_info === 'string' 
+            ? JSON.parse(row.availability_info) 
+            : row.availability_info)
+        : undefined,
+      createdAt: new Date(row.created_at),
+      updatedAt: new Date(row.updated_at),
+    }));
+  }
+
+  async updateProperty(id: string, property: Property): Promise<void> {
+    await query(
+      `UPDATE properties 
+       SET name = $1, description = $2, specifications = $3, price = $4,
+           availability = $5, availability_info = $6, updated_at = $7
+       WHERE id = $8`,
+      [
+        property.name,
+        property.description || null,
+        JSON.stringify(property.specifications),
+        property.price,
+        property.availability,
+        property.availabilityInfo ? JSON.stringify(property.availabilityInfo) : null,
+        property.updatedAt,
+        id,
+      ]
+    );
+  }
+
+  async deleteProperty(id: string): Promise<boolean> {
+    await query('DELETE FROM properties WHERE id = $1', [id]);
+    return true;
+  }
 }
 

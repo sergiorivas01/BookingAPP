@@ -1,5 +1,6 @@
 import { Client } from '../models/Client';
 import { Reservation } from '../models/Reservation';
+import { Property } from '../Properties/Property';
 import { IStorage } from './Storage';
 
 /**
@@ -10,6 +11,7 @@ import { IStorage } from './Storage';
 export class InMemoryStorage implements IStorage {
   private clients: Map<string, Client> = new Map();
   private reservations: Map<string, Reservation> = new Map();
+  private properties: Map<string, Property> = new Map();
 
   // Client operations
   async saveClient(client: Client): Promise<void> {
@@ -69,6 +71,30 @@ export class InMemoryStorage implements IStorage {
 
   async deleteReservation(id: string): Promise<boolean> {
     return this.reservations.delete(id);
+  }
+
+  // Property operations
+  async saveProperty(property: Property): Promise<void> {
+    this.properties.set(property.id, property);
+  }
+
+  async getProperty(id: string): Promise<Property | null> {
+    return this.properties.get(id) || null;
+  }
+
+  async getAllProperties(): Promise<Property[]> {
+    return Array.from(this.properties.values());
+  }
+
+  async updateProperty(id: string, property: Property): Promise<void> {
+    if (!this.properties.has(id)) {
+      throw new Error(`Property with id ${id} not found`);
+    }
+    this.properties.set(id, property);
+  }
+
+  async deleteProperty(id: string): Promise<boolean> {
+    return this.properties.delete(id);
   }
 }
 

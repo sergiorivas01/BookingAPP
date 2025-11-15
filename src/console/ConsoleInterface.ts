@@ -1,4 +1,6 @@
 import * as readline from 'readline';
+import Table from 'cli-table3';
+import chalk from 'chalk';
 import { ClientService } from '../services/ClientService';
 import { ReservationService } from '../services/ReservationService';
 import { Client, CreateClientDTO } from '../models/Client';
@@ -7,6 +9,17 @@ import {
   CreateReservationDTO,
   ReservationStatus,
 } from '../models/Reservation';
+import { IStorage } from '../storage/Storage';
+import { displayCalendar } from '../utils/calendar';
+import {
+  displaySection,
+  displaySuccess,
+  displayError,
+  displayWarning,
+  displayInfo,
+  displayDivider,
+  displayMenu,
+} from '../utils/consoleHelpers';
 
 /**
  * Console interface for interacting with the application
@@ -17,7 +30,8 @@ export class ConsoleInterface {
 
   constructor(
     private clientService: ClientService,
-    private reservationService: ReservationService
+    private reservationService: ReservationService,
+    private storage: IStorage
   ) {
     this.rl = readline.createInterface({
       input: process.stdin,
@@ -29,7 +43,10 @@ export class ConsoleInterface {
    * Start the console interface
    */
   async start(): Promise<void> {
-    console.log('=== BookingAPP - Reservation and Client Manager ===\n');
+    displaySection(
+      'BookingAPP',
+      'Reservation and Client Manager'
+    );
     await this.showMainMenu();
   }
 
@@ -37,11 +54,11 @@ export class ConsoleInterface {
    * Display main menu and handle user input
    */
   private async showMainMenu(): Promise<void> {
-    console.log('\nMain Menu:');
-    console.log('1. Client Management');
-    console.log('2. Reservation Management');
-    console.log('3. Exit');
-    console.log('');
+    displayMenu('Main Menu', [
+      'Client Management',
+      'Reservation Management',
+      'Exit',
+    ]);
 
     const choice = await this.question('Select an option: ');
 
@@ -53,12 +70,12 @@ export class ConsoleInterface {
         await this.showReservationMenu();
         break;
       case '3':
-        console.log('Goodbye!');
+        displaySection('Thank you for using BookingAPP!', 'Goodbye! 👋');
         this.rl.close();
         process.exit(0);
         break;
       default:
-        console.log('Invalid option. Please try again.');
+        displayError('Invalid option. Please try again.');
         await this.showMainMenu();
     }
   }
@@ -67,12 +84,12 @@ export class ConsoleInterface {
    * Display client management menu
    */
   private async showClientMenu(): Promise<void> {
-    console.log('\nClient Management:');
-    console.log('1. Create Client');
-    console.log('2. Get Client by ID');
-    console.log('3. Update Client');
-    console.log('4. Back to Main Menu');
-    console.log('');
+    displayMenu('Client Management', [
+      'Create Client',
+      'Get Client by ID',
+      'Update Client',
+      'Back to Main Menu',
+    ]);
 
     const choice = await this.question('Select an option: ');
 
@@ -93,7 +110,7 @@ export class ConsoleInterface {
         await this.showMainMenu();
         break;
       default:
-        console.log('Invalid option. Please try again.');
+        displayError('Invalid option. Please try again.');
         await this.showClientMenu();
     }
   }
@@ -102,18 +119,18 @@ export class ConsoleInterface {
    * Display reservation management menu
    */
   private async showReservationMenu(): Promise<void> {
-    console.log('\nReservation Management:');
-    console.log('1. Create Reservation');
-    console.log('2. Get Reservation by ID (with client info)');
-    console.log('3. Get Reservations by Client');
-    console.log('4. Get Reservations by Property');
-    console.log('5. Get Property Reservations with Clients');
-    console.log('6. Update Reservation');
-    console.log('7. Confirm Reservation');
-    console.log('8. Cancel Reservation');
-    console.log('9. Delete Reservation');
-    console.log('10. Back to Main Menu');
-    console.log('');
+    displayMenu('Reservation Management', [
+      'Create Reservation',
+      'Get Reservation by ID (with client info)',
+      'Get Reservations by Client',
+      'Get Reservations by Property',
+      'Get Property Reservations with Clients',
+      'Update Reservation',
+      'Confirm Reservation',
+      'Cancel Reservation',
+      'Delete Reservation',
+      'Back to Main Menu',
+    ]);
 
     const choice = await this.question('Select an option: ');
 
@@ -169,10 +186,11 @@ export class ConsoleInterface {
 
       const dto: CreateClientDTO = { name, email, phone };
       const client = await this.clientService.createClient(dto);
-      console.log('\nClient created successfully:');
+      displaySuccess('Client created successfully!');
+      displayDivider();
       this.displayClient(client);
     } catch (error) {
-      console.error(`Error: ${(error as Error).message}`);
+      displayError((error as Error).message);
     }
     await this.showClientMenu();
   }
@@ -187,7 +205,7 @@ export class ConsoleInterface {
         console.log('Client not found.');
       }
     } catch (error) {
-      console.error(`Error: ${(error as Error).message}`);
+      displayError((error as Error).message);
     }
     await this.showClientMenu();
   }
@@ -208,7 +226,7 @@ export class ConsoleInterface {
       console.log('\nClient updated successfully:');
       this.displayClient(client);
     } catch (error) {
-      console.error(`Error: ${(error as Error).message}`);
+      displayError((error as Error).message);
     }
     await this.showClientMenu();
   }
@@ -216,6 +234,42 @@ export class ConsoleInterface {
   // Reservation operations
   private async createReservation(): Promise<void> {
     try {
+      // Show available properties
+      const properties = await this.storage.getAllProperties();
+      if (properties.length > 0) {
+        console.log('\n' + chalk.bold.cyan('📋 Available Properties:'));
+        const propertiesTable = new Table({
+          head: ['ID', 'Name', 'Type', 'Price/Night', 'Status'],
+          style: { head: ['cyan'] },
+        });
+        
+        properties.forEach(prop => {
+          propertiesTable.push([
+            prop.id.substring(0, 12) + '...',
+            prop.name,
+            prop.specifications.type || 'N/A',
+            `$${prop.price}`,
+            prop.availability,
+          ]);
+        });
+        
+        console.log(propertiesTable.toString());
+        console.log('');
+      }
+      
+      const propertyId = (await this.question('Property ID (optional, press Enter to skip): ')).trim();
+      
+      // If property ID is provided, show calendar
+      if (propertyId) {
+        const property = await this.storage.getProperty(propertyId);
+        if (property) {
+          const reservations = await this.reservationService.getReservationsByProperty(propertyId);
+          displayCalendar(property, reservations);
+        } else {
+          console.log(chalk.yellow('⚠️  Property not found. Continuing without calendar...'));
+        }
+      }
+      
       const clientId = (await this.question('Client ID: ')).trim();
       const dateStr = (await this.question('Start date (YYYY-MM-DD): ')).trim();
       const endDateStr = (await this.question('End date (YYYY-MM-DD): ')).trim();
@@ -224,7 +278,6 @@ export class ConsoleInterface {
         (await this.question('Number of guests: ')).trim(),
         10
       );
-      const propertyId = (await this.question('Property ID (optional, press Enter to skip): ')).trim();
       const notes = (await this.question('Notes (optional, press Enter to skip): ')).trim();
 
       if (!clientId || !dateStr || !endDateStr || !time || isNaN(numberOfGuests)) {
@@ -246,8 +299,9 @@ export class ConsoleInterface {
       };
 
       const reservation = await this.reservationService.createReservation(dto);
-      console.log('\nReservation created successfully:');
-      this.displayReservation(reservation);
+      displaySuccess('Reservation created successfully!');
+      displayDivider();
+      await this.displayReservation(reservation);
     } catch (error) {
       console.error(`Error: ${(error as Error).message}`);
     }
@@ -260,7 +314,7 @@ export class ConsoleInterface {
       const result = await this.reservationService.getReservationWithClient(id);
       
       console.log('\n=== Reservation Details ===');
-      this.displayReservation(result.reservation);
+      await this.displayReservation(result.reservation);
       
       if (result.client) {
         console.log('=== Client Information ===');
@@ -287,9 +341,9 @@ export class ConsoleInterface {
         console.log('No reservations found for this client.');
       } else {
         console.log(`\nFound ${reservations.length} reservation(s):`);
-        reservations.forEach((reservation) =>
-          this.displayReservation(reservation)
-        );
+        for (const reservation of reservations) {
+          await this.displayReservation(reservation);
+        }
       }
     } catch (error) {
       console.error(`Error: ${(error as Error).message}`);
@@ -306,9 +360,9 @@ export class ConsoleInterface {
         console.log('No reservations found for this property.');
       } else {
         console.log(`\nFound ${reservations.length} reservation(s) for property ${propertyId}:`);
-        reservations.forEach((reservation) =>
-          this.displayReservation(reservation)
-        );
+        for (const reservation of reservations) {
+          await this.displayReservation(reservation);
+        }
       }
     } catch (error) {
       console.error(`Error: ${(error as Error).message}`);
@@ -328,9 +382,9 @@ export class ConsoleInterface {
         console.log(`\n=== Property ${propertyId} Reservations ===`);
         console.log(`Found ${reservationsWithClients.length} reservation(s):\n`);
         
-        reservationsWithClients.forEach((item, index) => {
+        for (const [index, item] of reservationsWithClients.entries()) {
           console.log(`--- Reservation ${index + 1} ---`);
-          this.displayReservation(item.reservation);
+          await this.displayReservation(item.reservation);
           
           if (item.client) {
             console.log('  Client Details:');
@@ -342,7 +396,7 @@ export class ConsoleInterface {
             console.log('  Client information not available');
           }
           console.log('');
-        });
+        }
       }
     } catch (error) {
       console.error(`Error: ${(error as Error).message}`);
@@ -374,8 +428,9 @@ export class ConsoleInterface {
       if (notes) dto.notes = notes;
 
       const reservation = await this.reservationService.updateReservation(id, dto);
-      console.log('\nReservation updated successfully:');
-      this.displayReservation(reservation);
+      displaySuccess('Reservation updated successfully!');
+      displayDivider();
+      await this.displayReservation(reservation);
     } catch (error) {
       console.error(`Error: ${(error as Error).message}`);
     }
@@ -386,8 +441,9 @@ export class ConsoleInterface {
     try {
       const id = await this.question('Reservation ID to confirm: ');
       const reservation = await this.reservationService.confirmReservation(id);
-      console.log('\nReservation confirmed successfully:');
-      this.displayReservation(reservation);
+      displaySuccess('Reservation confirmed successfully!');
+      displayDivider();
+      await this.displayReservation(reservation);
     } catch (error) {
       console.error(`Error: ${(error as Error).message}`);
     }
@@ -398,8 +454,9 @@ export class ConsoleInterface {
     try {
       const id = await this.question('Reservation ID to cancel: ');
       const reservation = await this.reservationService.cancelReservation(id);
-      console.log('\nReservation cancelled successfully:');
-      this.displayReservation(reservation);
+      displaySuccess('Reservation cancelled successfully!');
+      displayDivider();
+      await this.displayReservation(reservation);
     } catch (error) {
       console.error(`Error: ${(error as Error).message}`);
     }
@@ -419,31 +476,67 @@ export class ConsoleInterface {
 
   // Display helpers
   private displayClient(client: Client): void {
-    console.log(`  ID: ${client.id}`);
-    console.log(`  Name: ${client.name}`);
-    console.log(`  Email: ${client.email}`);
-    console.log(`  Phone: ${client.phone}`);
-    console.log(`  Created: ${client.createdAt.toISOString().split('T')[0]}`);
-    console.log(`  Updated: ${client.updatedAt.toISOString().split('T')[0]}`);
+    const table = new Table({
+      head: [chalk.cyan('Field'), chalk.cyan('Value')],
+      style: { head: ['cyan'] },
+    });
+    
+    table.push(
+      ['ID', client.id],
+      ['Name', client.name],
+      ['Email', client.email],
+      ['Phone', client.phone],
+      ['Created', client.createdAt.toISOString().split('T')[0]],
+      ['Updated', client.updatedAt.toISOString().split('T')[0]]
+    );
+    
+    console.log(table.toString());
     console.log('');
   }
 
-  private displayReservation(reservation: Reservation): void {
-    console.log(`  ID: ${reservation.id}`);
-    console.log(`  Client ID: ${reservation.clientId}`);
+  private async displayReservation(reservation: Reservation): Promise<void> {
+    const table = new Table({
+      head: [chalk.cyan('Field'), chalk.cyan('Value')],
+      style: { head: ['cyan'] },
+    });
+    
+    // Calculate days between start and end date
+    const startDate = new Date(reservation.date);
+    const endDate = new Date(reservation.endDate);
+    const timeDiff = endDate.getTime() - startDate.getTime();
+    const days = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+    
+    // Calculate total cost if property exists
+    let totalCost: string = chalk.gray('N/A');
     if (reservation.propertyId) {
-      console.log(`  Property ID: ${reservation.propertyId}`);
+      try {
+        const property = await this.storage.getProperty(reservation.propertyId);
+        if (property) {
+          const cost = property.price * days;
+          totalCost = chalk.green(`$${cost.toFixed(2)}`);
+        }
+      } catch (error) {
+        // Property not found or error, keep as N/A
+      }
     }
-    console.log(`  Start Date: ${reservation.date.toISOString().split('T')[0]}`);
-    console.log(`  End Date: ${reservation.endDate.toISOString().split('T')[0]}`);
-    console.log(`  Time: ${reservation.time}`);
-    console.log(`  Guests: ${reservation.numberOfGuests}`);
-    console.log(`  Status: ${reservation.status}`);
-    if (reservation.notes) {
-      console.log(`  Notes: ${reservation.notes}`);
-    }
-    console.log(`  Created: ${reservation.createdAt.toISOString()}`);
-    console.log(`  Updated: ${reservation.updatedAt.toISOString()}`);
+    
+    table.push(
+      ['ID', reservation.id],
+      ['Client ID', reservation.clientId],
+      ['Property ID', reservation.propertyId || chalk.gray('N/A')],
+      ['Start Date', reservation.date.toISOString().split('T')[0]],
+      ['End Date', reservation.endDate.toISOString().split('T')[0]],
+      ['Duration', `${days} day(s)`],
+      ['Time', reservation.time],
+      ['Guests', reservation.numberOfGuests.toString()],
+      ['Status', reservation.status],
+      ['Total Cost', totalCost],
+      ['Notes', reservation.notes || chalk.gray('N/A')],
+      ['Created', reservation.createdAt.toISOString()],
+      ['Updated', reservation.updatedAt.toISOString()]
+    );
+    
+    console.log(table.toString());
     console.log('');
   }
 

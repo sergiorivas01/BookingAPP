@@ -5,7 +5,7 @@
   "main": "dist/src/index.js",
   "scripts": {
     "build": "tsc",
-    "start": "node -r dotenv/config dist/src/index.js",
+    "start": "node dist/src/index.js",
     "build-start": "rm -rf dist && npm run build && npm run start",
     "dev": "tsc --watch",
     "type-check": "tsc --noEmit",
@@ -19,7 +19,8 @@
     "db:test": "node -r dotenv/config -r ts-node/register scripts/test-db-connection.ts",
     "db:test:storage": "node -r dotenv/config -r ts-node/register scripts/test-storage.ts",
     "db:test:console": "node -r dotenv/config -r ts-node/register scripts/test-console-flow.ts",
-    "db:check": "node -r dotenv/config -r ts-node/register scripts/check-data.ts"
+    "db:check": "node -r dotenv/config -r ts-node/register scripts/check-data.ts",
+    "db:seed:properties": "node -r dotenv/config -r ts-node/register scripts/seed-properties.ts"
   },
   "keywords": [
     "reservation",
@@ -30,6 +31,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "boxen": "^8.0.1",
+    "chalk": "^5.6.2",
+    "cli-table3": "^0.6.5",
     "dotenv": "^16.3.1",
     "node-pg-migrate": "^6.2.2",
     "pg": "^8.11.3",

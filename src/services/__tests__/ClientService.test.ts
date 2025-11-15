@@ -21,6 +21,11 @@ describe('ClientService', () => {
       getReservationsByProperty: jest.fn(),
       updateReservation: jest.fn(),
       deleteReservation: jest.fn(),
+      saveProperty: jest.fn(),
+      getProperty: jest.fn(),
+      getAllProperties: jest.fn(),
+      updateProperty: jest.fn(),
+      deleteProperty: jest.fn(),
     };
 
     service = new ClientService(mockStorage);

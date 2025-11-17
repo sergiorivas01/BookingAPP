@@ -37,5 +37,5 @@ data/
 *.db
 *.json.bak
 
-//Task files
+#Task files
 ToDO.md

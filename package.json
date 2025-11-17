@@ -1,5 +1,5 @@
 {
-  "name": "bookingapp",
+  "name": "@azucar_1/bookingapp",
   "version": "1.0.0",
   "description": "Reservation and client management application",
   "main": "dist/src/index.js",

@@ -1,6 +1,7 @@
 import { InMemoryStorage } from '../InMemoryStorage';
 import { Client } from '../../models/Client';
 import { Reservation, ReservationStatus } from '../../models/Reservation';
+import { Property, PropertyType, AvailabilityStatus } from '../../Properties/Property';
 
 describe('InMemoryStorage', () => {
   let storage: InMemoryStorage;
@@ -213,6 +214,136 @@ describe('InMemoryStorage', () => {
 
     it('should return false when deleting non-existent reservation', async () => {
       const deleted = await storage.deleteReservation('non-existent');
+      expect(deleted).toBe(false);
+    });
+
+    it('should get reservations by property id', async () => {
+      const reservation1: Reservation = {
+        ...mockReservation,
+        id: 'reservation-1',
+        propertyId: 'property-1',
+      };
+      const reservation2: Reservation = {
+        ...mockReservation,
+        id: 'reservation-2',
+        propertyId: 'property-1',
+      };
+      const reservation3: Reservation = {
+        ...mockReservation,
+        id: 'reservation-3',
+        propertyId: 'property-2',
+      };
+
+      await storage.saveReservation(reservation1);
+      await storage.saveReservation(reservation2);
+      await storage.saveReservation(reservation3);
+
+      const propertyReservations = await storage.getReservationsByProperty('property-1');
+      expect(propertyReservations).toHaveLength(2);
+      expect(propertyReservations).toContainEqual(reservation1);
+      expect(propertyReservations).toContainEqual(reservation2);
+      expect(propertyReservations).not.toContainEqual(reservation3);
+    });
+
+    it('should return empty array when property has no reservations', async () => {
+      const reservations = await storage.getReservationsByProperty('property-1');
+      expect(reservations).toHaveLength(0);
+    });
+  });
+
+  describe('Property operations', () => {
+    const mockProperty: Property = {
+      id: 'property-1',
+      name: 'Test Property',
+      description: 'A test property',
+      specifications: {
+        type: PropertyType.APARTMENT,
+        area: 100,
+        capacity: 4,
+        bedrooms: 2,
+        bathrooms: 1,
+        amenities: ['WiFi', 'Parking'],
+        location: 'Test Location',
+      },
+      price: 100.0,
+      availability: AvailabilityStatus.AVAILABLE,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    it('should save a property', async () => {
+      await storage.saveProperty(mockProperty);
+      const retrieved = await storage.getProperty('property-1');
+      expect(retrieved).toEqual(mockProperty);
+    });
+
+    it('should get a property by id', async () => {
+      await storage.saveProperty(mockProperty);
+      const property = await storage.getProperty('property-1');
+      expect(property).toEqual(mockProperty);
+    });
+
+    it('should return null when property not found', async () => {
+      const property = await storage.getProperty('non-existent');
+      expect(property).toBeNull();
+    });
+
+    it('should get all properties', async () => {
+      const property1 = {
+        ...mockProperty,
+        id: 'property-1',
+        name: 'Property 1',
+      };
+      const property2 = {
+        ...mockProperty,
+        id: 'property-2',
+        name: 'Property 2',
+      };
+
+      await storage.saveProperty(property1);
+      await storage.saveProperty(property2);
+
+      const allProperties = await storage.getAllProperties();
+      expect(allProperties).toHaveLength(2);
+      expect(allProperties).toContainEqual(property1);
+      expect(allProperties).toContainEqual(property2);
+    });
+
+    it('should update an existing property', async () => {
+      await storage.saveProperty(mockProperty);
+      const updatedProperty = {
+        ...mockProperty,
+        name: 'Updated Property',
+        updatedAt: new Date(),
+      };
+
+      await storage.updateProperty('property-1', updatedProperty);
+      const retrieved = await storage.getProperty('property-1');
+      expect(retrieved?.name).toBe('Updated Property');
+    });
+
+    it('should throw error when updating non-existent property', async () => {
+      const updatedProperty = {
+        ...mockProperty,
+        id: 'non-existent',
+      };
+
+      await expect(
+        storage.updateProperty('non-existent', updatedProperty)
+      ).rejects.toThrow('Property with id non-existent not found');
+    });
+
+    it('should delete a property', async () => {
+      await storage.saveProperty(mockProperty);
+      const deleted = await storage.deleteProperty('property-1');
+      expect(deleted).toBe(true);
+
+      const retrieved = await storage.getProperty('property-1');
+      expect(retrieved).toBeNull();
+    });
+
+    it('should return false when deleting non-existent property', async () => {
+      const deleted = await storage.deleteProperty('non-existent');
       expect(deleted).toBe(false);
     });
   });

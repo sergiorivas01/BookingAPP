@@ -32,8 +32,14 @@ describe('ReservationService', () => {
       getReservation: jest.fn(),
       getAllReservations: jest.fn(),
       getReservationsByClient: jest.fn(),
+      getReservationsByProperty: jest.fn(),
       updateReservation: jest.fn(),
       deleteReservation: jest.fn(),
+      saveProperty: jest.fn(),
+      getProperty: jest.fn(),
+      getAllProperties: jest.fn(),
+      updateProperty: jest.fn(),
+      deleteProperty: jest.fn(),
     };
 
     service = new ReservationService(mockStorage);
@@ -456,6 +462,116 @@ describe('ReservationService', () => {
       );
 
       expect(mockStorage.deleteReservation).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getReservationWithClient', () => {
+    const futureStart = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const futureEnd = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+
+    const reservation: Reservation = {
+      id: 'reservation-1',
+      clientId: 'client-1',
+      propertyId: 'property-1',
+      date: futureStart,
+      endDate: futureEnd,
+      time: '12:00',
+      numberOfGuests: 2,
+      status: ReservationStatus.PENDING,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    it('should return reservation with client details', async () => {
+      mockStorage.getReservation.mockResolvedValue(reservation);
+      mockStorage.getClient.mockResolvedValue(mockClient);
+
+      const result = await service.getReservationWithClient('reservation-1');
+
+      expect(result.reservation).toEqual(reservation);
+      expect(result.client).toEqual({
+        id: mockClient.id,
+        name: mockClient.name,
+        email: mockClient.email,
+        phone: mockClient.phone,
+      });
+    });
+
+    it('should return reservation with null client when not found', async () => {
+      mockStorage.getReservation.mockResolvedValue(reservation);
+      mockStorage.getClient.mockResolvedValue(null);
+
+      const result = await service.getReservationWithClient('reservation-1');
+
+      expect(result.reservation).toEqual(reservation);
+      expect(result.client).toBeNull();
+    });
+
+    it('should throw error when reservation does not exist', async () => {
+      mockStorage.getReservation.mockResolvedValue(null);
+
+      await expect(
+        service.getReservationWithClient('missing')
+      ).rejects.toThrow('Reservation with id missing not found');
+    });
+  });
+
+  describe('getPropertyReservationsWithClients', () => {
+    const futureStart = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const futureEnd = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+
+    const reservationWithClient: Reservation = {
+      id: 'reservation-1',
+      clientId: 'client-1',
+      propertyId: 'property-1',
+      date: futureStart,
+      endDate: futureEnd,
+      time: '12:00',
+      numberOfGuests: 2,
+      status: ReservationStatus.PENDING,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const reservationWithoutClient: Reservation = {
+      ...reservationWithClient,
+      id: 'reservation-2',
+      clientId: 'client-2',
+    };
+
+    it('should return reservations along with their clients', async () => {
+      mockStorage.getReservationsByProperty.mockResolvedValue([
+        reservationWithClient,
+        reservationWithoutClient,
+      ]);
+      mockStorage.getClient.mockImplementation(async (clientId: string) => {
+        if (clientId === 'client-1') {
+          return mockClient;
+        }
+        return null;
+      });
+
+      const results = await service.getPropertyReservationsWithClients(
+        'property-1'
+      );
+
+      expect(results).toHaveLength(2);
+      expect(results[0]).toEqual({
+        reservation: reservationWithClient,
+        client: {
+          id: mockClient.id,
+          name: mockClient.name,
+          email: mockClient.email,
+          phone: mockClient.phone,
+        },
+      });
+      expect(results[1]).toEqual({
+        reservation: reservationWithoutClient,
+        client: null,
+      });
+      expect(mockStorage.getReservationsByProperty).toHaveBeenCalledWith(
+        'property-1'
+      );
     });
   });
 

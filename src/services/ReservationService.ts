@@ -5,7 +5,7 @@ import {
   ReservationStatus,
 } from '../models/Reservation';
 import { IStorage } from '../storage/Storage';
-import { v4 as uuidv4 } from 'uuid';
+import { generateId } from '../utils/idGenerator';
 
 /**
  * Service for managing reservation operations
@@ -46,7 +46,7 @@ export class ReservationService {
     }
 
     const reservation: Reservation = {
-      id: uuidv4(),
+      id: generateId(),
       clientId: dto.clientId,
       propertyId: dto.propertyId,
       date: dto.date,
@@ -82,6 +82,73 @@ export class ReservationService {
    */
   async getReservationsByClient(clientId: string): Promise<Reservation[]> {
     return this.storage.getReservationsByClient(clientId);
+  }
+
+  /**
+   * Get reservations by property ID
+   */
+  async getReservationsByProperty(propertyId: string): Promise<Reservation[]> {
+    return this.storage.getReservationsByProperty(propertyId);
+  }
+
+  /**
+   * Get reservation details with client information
+   * Returns reservation with associated client data
+   */
+  async getReservationWithClient(reservationId: string): Promise<{
+    reservation: Reservation;
+    client: { id: string; name: string; email: string; phone: string } | null;
+  }> {
+    const reservation = await this.storage.getReservation(reservationId);
+    if (!reservation) {
+      throw new Error(`Reservation with id ${reservationId} not found`);
+    }
+
+    const client = await this.storage.getClient(reservation.clientId);
+    
+    return {
+      reservation,
+      client: client
+        ? {
+            id: client.id,
+            name: client.name,
+            email: client.email,
+            phone: client.phone,
+          }
+        : null,
+    };
+  }
+
+  /**
+   * Get all property reservations with client information
+   * Shows which clients have reservations for a specific property
+   */
+  async getPropertyReservationsWithClients(propertyId: string): Promise<
+    Array<{
+      reservation: Reservation;
+      client: { id: string; name: string; email: string; phone: string } | null;
+    }>
+  > {
+    const reservations = await this.storage.getReservationsByProperty(propertyId);
+    
+    const reservationsWithClients = await Promise.all(
+      reservations.map(async (reservation) => {
+        const client = await this.storage.getClient(reservation.clientId);
+        return {
+          reservation,
+          client: client
+            ? {
+                id: client.id,
+                name: client.name,
+                email: client.email,
+                phone: client.phone,
+              }
+            : null,
+        };
+      })
+    );
+
+    return reservationsWithClients;
   }
 
   /**

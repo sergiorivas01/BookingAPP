@@ -7,19 +7,22 @@
     "dev": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "pnpm --filter \"@bookingapp/console\" dev"
+        "command": "pnpm --filter \"@bookingapp/console\" dev",
+        "cwd": "console"
       }
     },
     "build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "pnpm --filter \"@bookingapp/console\" build"
+        "command": "rm -rf dist && pnpm --filter \"@bookingapp/console\" build",
+        "cwd": "console"
       }
     },
     "start": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "pnpm --filter \"@bookingapp/console\" start"
+        "command": "pnpm --filter \"@bookingapp/console\" start",
+        "cwd": "console"
       }
     }
   },

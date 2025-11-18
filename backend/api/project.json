@@ -14,7 +14,7 @@
     "build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "pnpm --filter \"@bookingapp/backend-api\" build",
+        "command": "rm -rf dist && pnpm --filter \"@bookingapp/backend-api\" build",
         "cwd": "backend/api"
       }
     },

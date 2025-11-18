@@ -1,5 +1,6 @@
 .navigation {
-  background-color: var(--surface);
+  background-color: rgba(26, 26, 26, 0.9);
+  backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--border-color);
   box-shadow: var(--shadow);
   position: sticky;

@@ -13,3 +13,4 @@ Create a react APP
 
 Create an API project
 
+Investigate pnpm and nx

@@ -1,7 +1,7 @@
-import { IStorage } from '../../src/storage/Storage';
-import { Client } from '../../src/models/Client';
-import { Reservation, ReservationStatus } from '../../src/models/Reservation';
-import { Property, AvailabilityStatus } from '../../src/Properties/Property';
+import { IStorage } from '../../bookingapp-lib/storage/Storage';
+import { Client } from '../../bookingapp-lib/models/Client';
+import { Reservation, ReservationStatus } from '../../bookingapp-lib/models/Reservation';
+import { Property, AvailabilityStatus } from '../../bookingapp-lib/Properties/Property';
 import { query, transaction } from './connection';
 
 /**

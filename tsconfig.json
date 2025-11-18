@@ -15,7 +15,12 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "include": ["src/**/*", "backend/**/*"],
+  "include": [
+    "bookingapp-lib/**/*",
+    "backend/**/*",
+    "console/**/*",
+    "scripts/**/*"
+  ],
   "exclude": ["node_modules", "dist"],
   "ts-node": {
     "transpileOnly": true,

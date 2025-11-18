@@ -3,9 +3,9 @@ import 'dotenv/config';
 
 import { PostgreSQLStorage } from '../backend/database/PostgreSQLStorage';
 import { initializePool, closePool } from '../backend/database/connection';
-import { ClientService } from './services/ClientService';
-import { ReservationService } from './services/ReservationService';
-import { ConsoleInterface } from './console/ConsoleInterface';
+import { ClientService } from '../bookingapp-lib/services/ClientService';
+import { ReservationService } from '../bookingapp-lib/services/ReservationService';
+import { ConsoleInterface } from './ConsoleInterface';
 
 /**
  * Application entry point

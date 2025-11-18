@@ -1,0 +1,37 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "backend-api",
+  "projectType": "application",
+  "sourceRoot": "backend/api",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm --filter \"@bookingapp/backend-api\" dev",
+        "cwd": "backend/api"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm --filter \"@bookingapp/backend-api\" build",
+        "cwd": "backend/api"
+      }
+    },
+    "start": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm --filter \"@bookingapp/backend-api\" start",
+        "cwd": "backend/api"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm --filter \"@bookingapp/backend-api\" lint",
+        "cwd": "backend/api"
+      }
+    }
+  },
+  "tags": ["scope:backend", "type:api"]
+}

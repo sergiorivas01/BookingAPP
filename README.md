@@ -13,7 +13,7 @@ BookingAPP is a full-featured system for managing reservations, clients, and pro
 - **Database**: PostgreSQL
 - **Testing**: Jest
 - **Migrations**: node-pg-migrate
-- **Future Frontend**: React
+- **Frontend**: React 18 with Vite
 - **Future Backend**: API project
 
 ## Features
@@ -59,8 +59,8 @@ The initial development focuses on building a fully functional console/CLI appli
 - PostgreSQL database integration
 - Database migrations
 
-### Phase 2: React Client (Planned)
-Once the console application is complete and tested, a React-based web interface will be developed to provide a user-friendly graphical interface for the same functionality.
+### Phase 2: React Client ✅ (In Progress)
+A React-based web interface has been created to provide a user-friendly graphical interface for the same functionality. The frontend is ready for integration with the backend API.
 
 ### Phase 3: API Project (Planned)
 A RESTful API will be created to serve both the React client and potentially other clients.
@@ -98,6 +98,15 @@ BookingAPP/
 │       ├── PostgreSQLStorage.ts # PostgreSQL storage implementation
 │       └── migrations/          # Database migrations
 │           └── 001_create_tables.ts
+├── frontend/                     # React frontend application
+│   ├── src/                      # React source files
+│   │   ├── components/          # Reusable React components
+│   │   ├── pages/               # Page components
+│   │   ├── services/            # API service layer
+│   │   ├── types/               # TypeScript type definitions
+│   │   └── styles/              # Global styles
+│   ├── package.json             # Frontend dependencies
+│   └── vite.config.ts           # Vite configuration
 ├── scripts/                     # Utility scripts
 │   ├── check-data.ts            # Data inspection script
 │   ├── seed-properties.ts       # Property seeding script
@@ -118,12 +127,14 @@ BookingAPP/
 
 ### Prerequisites
 
-- Node.js (v14 or higher recommended)
+- Node.js (v18 or higher recommended)
 - npm or yarn
 - PostgreSQL (v12 or higher) - for production database
 - A `.env` file with database configuration (see Configuration section)
 
 ### Installation
+
+#### Backend (Console Application)
 
 ```bash
 # Install dependencies
@@ -135,9 +146,24 @@ npm run build
 # Run database migrations (if using PostgreSQL)
 npm run db:migrate
 
-# Run the application
+# Run the console application
 npm start
 ```
+
+#### Frontend (React Application)
+
+```bash
+# Navigate to frontend directory
+cd frontend
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+```
+
+The frontend will be available at `http://localhost:3000`
 
 ### Configuration
 
@@ -253,6 +279,34 @@ Coverage reports are generated in the `coverage/` directory and can be viewed in
 - `jest` - Testing framework
 - `ts-jest` - TypeScript preprocessor for Jest
 - `@types/*` - TypeScript type definitions
+
+## Frontend Development
+
+The React frontend is located in the `frontend/` directory. See `frontend/README.md` for detailed information about the frontend setup, structure, and development.
+
+### Quick Start (Frontend)
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### Frontend Features
+
+- **Modern UI**: Built with React 18 and modern CSS
+- **Type Safety**: Full TypeScript support with types matching backend models
+- **Routing**: React Router for navigation
+- **API Ready**: Service layer prepared for backend API integration
+- **Responsive Design**: Mobile-friendly interface
+
+### Next Steps for Frontend
+
+1. Implement API backend to connect with existing business logic
+2. Add form components for creating/editing clients and reservations
+3. Implement data tables/lists for displaying data
+4. Add calendar component for viewing reservations
+5. Add error handling and loading states
 
 ## License
 

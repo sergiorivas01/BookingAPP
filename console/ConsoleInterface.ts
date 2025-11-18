@@ -1,16 +1,16 @@
 import * as readline from 'readline';
 import Table from 'cli-table3';
 import chalk from 'chalk';
-import { ClientService } from '../services/ClientService';
-import { ReservationService } from '../services/ReservationService';
-import { Client, CreateClientDTO } from '../models/Client';
+import { ClientService } from '../bookingapp-lib/services/ClientService';
+import { ReservationService } from '../bookingapp-lib/services/ReservationService';
+import { Client, CreateClientDTO } from '../bookingapp-lib/models/Client';
 import {
   Reservation,
   CreateReservationDTO,
   ReservationStatus,
-} from '../models/Reservation';
-import { IStorage } from '../storage/Storage';
-import { displayCalendar } from '../utils/calendar';
+} from '../bookingapp-lib/models/Reservation';
+import { IStorage } from '../bookingapp-lib/storage/Storage';
+import { displayCalendar } from '../bookingapp-lib/utils/calendar';
 import {
   displaySection,
   displaySuccess,
@@ -19,7 +19,7 @@ import {
   displayInfo,
   displayDivider,
   displayMenu,
-} from '../utils/consoleHelpers';
+} from '../bookingapp-lib/utils/consoleHelpers';
 
 /**
  * Console interface for interacting with the application

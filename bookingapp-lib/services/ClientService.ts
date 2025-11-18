@@ -87,6 +87,17 @@ export class ClientService {
   }
 
   /**
+   * Delete a client
+   */
+  async deleteClient(id: string): Promise<boolean> {
+    const client = await this.storage.getClient(id);
+    if (!client) {
+      throw new Error(`Client with id ${id} not found`);
+    }
+    return this.storage.deleteClient(id);
+  }
+
+  /**
    * Validate email format
    */
   private isValidEmail(email: string): boolean {

@@ -4,8 +4,8 @@
  */
 import { PostgreSQLStorage } from '../backend/database/PostgreSQLStorage';
 import { initializePool, closePool } from '../backend/database/connection';
-import { Property, PropertyType, AvailabilityStatus } from '../src/Properties/Property';
-import { generateId } from '../src/utils/idGenerator';
+import { Property, PropertyType, AvailabilityStatus } from '../bookingapp-lib/Properties/Property';
+import { generateId } from '../bookingapp-lib/utils/idGenerator';
 
 const exampleProperties: Omit<Property, 'id' | 'createdAt' | 'updatedAt'>[] = [
   {

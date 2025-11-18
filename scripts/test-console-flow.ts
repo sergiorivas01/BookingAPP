@@ -3,8 +3,8 @@
  */
 import { PostgreSQLStorage } from '../backend/database/PostgreSQLStorage';
 import { initializePool, closePool } from '../backend/database/connection';
-import { ClientService } from '../src/services/ClientService';
-import { ReservationService } from '../src/services/ReservationService';
+import { ClientService } from '../bookingapp-lib/services/ClientService';
+import { ReservationService } from '../bookingapp-lib/services/ReservationService';
 
 async function testConsoleFlow(): Promise<void> {
   try {

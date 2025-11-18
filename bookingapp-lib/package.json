@@ -1,0 +1,20 @@
+{
+  "name": "@bookingapp/lib",
+  "version": "1.0.0",
+  "description": "Core business logic and models for BookingAPP",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p ../tsconfig.json",
+    "test": "jest",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.1"
+  }
+}

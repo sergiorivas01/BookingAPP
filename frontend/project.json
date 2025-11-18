@@ -1,0 +1,39 @@
+{
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "name": "frontend",
+  "projectType": "application",
+  "sourceRoot": "frontend/src",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm --filter \"bookingapp-frontend\" dev"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm --filter \"bookingapp-frontend\" build"
+      }
+    },
+    "preview": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm --filter \"bookingapp-frontend\" preview"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm --filter \"bookingapp-frontend\" lint"
+      }
+    },
+    "type-check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm --filter \"bookingapp-frontend\" type-check"
+      }
+    }
+  },
+  "tags": ["scope:frontend", "type:app"]
+}

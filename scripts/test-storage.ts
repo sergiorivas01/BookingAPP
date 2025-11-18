@@ -4,9 +4,9 @@
  */
 import { PostgreSQLStorage } from '../backend/database/PostgreSQLStorage';
 import { initializePool, closePool } from '../backend/database/connection';
-import { ClientService } from '../src/services/ClientService';
-import { ReservationService } from '../src/services/ReservationService';
-import { ReservationStatus } from '../src/models/Reservation';
+import { ClientService } from '../bookingapp-lib/services/ClientService';
+import { ReservationService } from '../bookingapp-lib/services/ReservationService';
+import { ReservationStatus } from '../bookingapp-lib/models/Reservation';
 import { query } from '../backend/database/connection';
 
 async function testStorage(): Promise<void> {

@@ -1,0 +1,48 @@
+# Source files (only compiled dist/ should be included)
+/src
+/backend
+
+# Test files
+**/__tests__/**
+**/*.test.ts
+**/*.spec.ts
+/test
+/coverage
+/jest.config.js
+
+# Build and configuration files
+/scripts
+/tsconfig.json
+/tsconfig.test.json
+*.tsbuildinfo
+
+# CI/CD and development tools
+/.github
+/.cursorrules
+/.gitignore
+
+# Environment files
+/.env
+/.env.*
+.env.local
+.env.*.local
+
+# IDE files
+/.vscode
+/.idea
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+logs/
+
+# Documentation (optional - remove if you want README.md in npm)
+/README.md
+/ToDO.md

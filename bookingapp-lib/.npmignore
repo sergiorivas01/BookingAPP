@@ -1,35 +1,37 @@
-# Source files (only compiled dist/ should be included)
-/src
-/backend
+# Source TypeScript files (only compiled dist/ should be included)
+*.ts
+!dist/**/*.d.ts
 
 # Test files
 **/__tests__/**
 **/*.test.ts
 **/*.spec.ts
-/test
-/coverage
-/jest.config.js
+**/*.test.js
+**/*.spec.js
 
 # Build and configuration files
-/scripts
-/tsconfig.json
-/tsconfig.test.json
+project.json
+tsconfig.json
+tsconfig.*.json
+jest.config.*
 *.tsbuildinfo
 
+# Development dependencies
+node_modules/
+
 # CI/CD and development tools
-/.github
-/.cursorrules
-/.gitignore
+.gitignore
+.cursorrules
 
 # Environment files
-/.env
-/.env.*
+.env
+.env.*
 .env.local
 .env.*.local
 
 # IDE files
-/.vscode
-/.idea
+.vscode/
+.idea/
 *.swp
 *.swo
 *~
@@ -44,5 +46,5 @@ npm-debug.log*
 logs/
 
 # Documentation (optional - remove if you want README.md in npm)
-/README.md
-/ToDO.md
+# README.md
+

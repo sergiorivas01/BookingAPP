@@ -7,19 +7,22 @@
     "build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "pnpm --filter \"@bookingapp/lib\" build"
+        "command": "rm -rf dist && pnpm --filter \"@bookingapp/lib\" build",
+        "cwd": "bookingapp-lib"
       }
     },
     "test": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "pnpm --filter \"@bookingapp/lib\" test"
+        "command": "pnpm --filter \"@bookingapp/lib\" test",
+        "cwd": "bookingapp-lib"
       }
     },
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "pnpm --filter \"@bookingapp/lib\" lint"
+        "command": "pnpm --filter \"@bookingapp/lib\" lint",
+        "cwd": "bookingapp-lib"
       }
     }
   },

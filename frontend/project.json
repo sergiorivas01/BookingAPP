@@ -7,31 +7,36 @@
     "dev": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "pnpm --filter \"bookingapp-frontend\" dev"
+        "command": "pnpm --filter \"bookingapp-frontend\" dev",
+        "cwd": "frontend"
       }
     },
     "build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "pnpm --filter \"bookingapp-frontend\" build"
+        "command": "rm -rf dist && pnpm --filter \"bookingapp-frontend\" build",
+        "cwd": "frontend"
       }
     },
     "preview": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "pnpm --filter \"bookingapp-frontend\" preview"
+        "command": "pnpm --filter \"bookingapp-frontend\" preview",
+        "cwd": "frontend"
       }
     },
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "pnpm --filter \"bookingapp-frontend\" lint"
+        "command": "pnpm --filter \"bookingapp-frontend\" lint",
+        "cwd": "frontend"
       }
     },
     "type-check": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "pnpm --filter \"bookingapp-frontend\" type-check"
+        "command": "pnpm --filter \"bookingapp-frontend\" type-check",
+        "cwd": "frontend"
       }
     }
   },

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { clientApi, ApiError } from '../../services/api';
-import { Client, CreateClientDTO } from '../../types/models';
+import type { Client, CreateClientDTO } from '@azucar_1/bookingapp';
 import Modal from '../../components/Modal/Modal';
 import ClientForm from '../../components/ClientForm/ClientForm';
 import './Clients.css';

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { reservationApi, clientApi, ApiError } from '../../services/api';
-import { Reservation, CreateReservationDTO, Client } from '../../types/models';
+import type { Reservation, CreateReservationDTO, Client } from '@azucar_1/bookingapp';
 import Modal from '../../components/Modal/Modal';
 import ReservationForm from '../../components/ReservationForm/ReservationForm';
 import './Reservations.css';

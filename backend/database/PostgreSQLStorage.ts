@@ -1,7 +1,11 @@
-import { IStorage } from '../../bookingapp-lib/storage/Storage';
-import { Client } from '../../bookingapp-lib/models/Client';
-import { Reservation, ReservationStatus } from '../../bookingapp-lib/models/Reservation';
-import { Property, AvailabilityStatus } from '../../bookingapp-lib/Properties/Property';
+import {
+  IStorage,
+  Client,
+  Reservation,
+  ReservationStatus,
+  Property,
+  AvailabilityStatus,
+} from '@azucar_1/bookingapp';
 import { query, transaction } from './connection';
 
 /**

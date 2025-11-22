@@ -33,7 +33,6 @@
   },
   "projects": {
     "backend-api": "backend/api",
-    "bookingapp-lib": "bookingapp-lib",
     "console": "console",
     "frontend": "frontend"
   }

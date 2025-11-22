@@ -1,6 +1,9 @@
 import { Router, Request, Response } from 'express';
-import { ClientService } from '../../../bookingapp-lib/services/ClientService';
-import { CreateClientDTO, UpdateClientDTO } from '../../../bookingapp-lib/models/Client';
+import {
+  ClientService,
+  CreateClientDTO,
+  UpdateClientDTO,
+} from '@azucar_1/bookingapp';
 
 export function clientRoutes(clientService: ClientService): Router {
   const router = Router();

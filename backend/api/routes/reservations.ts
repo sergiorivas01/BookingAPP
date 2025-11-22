@@ -1,7 +1,10 @@
 import { Router, Request, Response } from 'express';
-import { ReservationService } from '../../../bookingapp-lib/services/ReservationService';
-import { ClientService } from '../../../bookingapp-lib/services/ClientService';
-import { CreateReservationDTO, UpdateReservationDTO } from '../../../bookingapp-lib/models/Reservation';
+import {
+  ReservationService,
+  ClientService,
+  CreateReservationDTO,
+  UpdateReservationDTO,
+} from '@azucar_1/bookingapp';
 
 export function reservationRoutes(
   reservationService: ReservationService,

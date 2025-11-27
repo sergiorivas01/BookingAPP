@@ -2,7 +2,7 @@
 
 ## Language and Code Standards
 
-- Always work in English for code, comments, and documentation, and in the chat
+- Always work in English for code, comments, and documentation
 - Primary programming language: TypeScript
 - Compilation: Node.js
 - Use TypeScript strict mode

@@ -1,5 +1,0 @@
-packages:
-  - backend/api
-  - console
-  - frontend
-  - packages/bookingapp-lib

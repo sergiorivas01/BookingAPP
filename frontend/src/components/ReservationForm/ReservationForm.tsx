@@ -1,5 +1,5 @@
 import { useState, FormEvent, useEffect } from 'react';
-import { CreateReservationDTO, Client } from '../../types/models';
+import type { CreateReservationDTO, Client } from '@azucar_1/bookingapp';
 import './ReservationForm.css';
 
 interface ReservationFormProps {

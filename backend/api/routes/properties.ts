@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { IStorage } from '../../../bookingapp-lib/storage/Storage';
+import { IStorage } from '@azucar_1/bookingapp';
 
 export function propertyRoutes(storage: IStorage): Router {
   const router = Router();

@@ -3,11 +3,12 @@
  * Run with: npm run db:test:storage
  */
 import { PostgreSQLStorage } from '../backend/database/PostgreSQLStorage';
-import { initializePool, closePool } from '../backend/database/connection';
-import { ClientService } from '../bookingapp-lib/services/ClientService';
-import { ReservationService } from '../bookingapp-lib/services/ReservationService';
-import { ReservationStatus } from '../bookingapp-lib/models/Reservation';
-import { query } from '../backend/database/connection';
+import { initializePool, closePool, query } from '../backend/database/connection';
+import {
+  ClientService,
+  ReservationService,
+  ReservationStatus,
+} from '@azucar_1/bookingapp';
 
 async function testStorage(): Promise<void> {
   try {

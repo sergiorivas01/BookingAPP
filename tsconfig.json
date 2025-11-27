@@ -16,7 +16,6 @@
     "sourceMap": true
   },
   "include": [
-    "bookingapp-lib/**/*",
     "backend/**/*",
     "console/**/*",
     "scripts/**/*"

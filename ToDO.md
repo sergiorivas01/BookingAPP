@@ -1,16 +1,10 @@
 
-Add github actions 
+launch.json with the debbugger
 
-Investigate jest
+workspace for pnpm
 
-Investigate how to convert to a node package 
+frontend unit testing (selenium / playride)
 
-Publish package to the npm 
+login 
 
-import packagae into our console project
-
-Create a react APP
-
-Create an API project
-
-Investigate pnpm and nx
+application insights(Azure)

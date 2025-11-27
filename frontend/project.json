@@ -38,6 +38,13 @@
         "command": "pnpm --filter \"bookingapp-frontend\" type-check",
         "cwd": "frontend"
       }
+    },
+    "test-e2e": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm --filter \"bookingapp-frontend\" test:e2e",
+        "cwd": "frontend"
+      }
     }
   },
   "tags": ["scope:frontend", "type:app"]

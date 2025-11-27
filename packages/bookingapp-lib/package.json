@@ -1,0 +1,16 @@
+{
+  "name": "@azucar_1/bookingapp",
+  "version": "1.1.1",
+  "description": "Core business logic and models for BookingAPP",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "sideEffects": false,
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  }
+}
+

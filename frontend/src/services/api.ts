@@ -13,8 +13,8 @@ import type {
   CreateReservationDTO,
   UpdateReservationDTO,
   Property,
-  ReservationWithClient,
-} from '../types/models';
+} from '@azucar_1/bookingapp';
+import type { ReservationWithClient } from '../types/auxiliary';
 
 // If VITE_API_URL is set, use it directly (should include /api)
 // Otherwise, use /api which will be proxied by Vite

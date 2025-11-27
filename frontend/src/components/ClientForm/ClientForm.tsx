@@ -1,5 +1,5 @@
 import { useState, FormEvent } from 'react';
-import { CreateClientDTO } from '../../types/models';
+import type { CreateClientDTO } from '@azucar_1/bookingapp';
 import './ClientForm.css';
 
 interface ClientFormProps {

@@ -6,6 +6,7 @@ on:
     paths:
       - "frontend/**"
       - "packages/bookingapp-lib/**"
+      - "github/workflows/deploy-frontend.yml"
       - "package.json"
       - "pnpm-workspace.yaml"
 

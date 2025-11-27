@@ -5,6 +5,7 @@ on:
     branches: [main, dev]
     paths:
       - "backend/**"
+      - "packages/bookingapp-lib/**"
       - "package.json"
       - "pnpm-workspace.yaml"
 
@@ -32,9 +33,6 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Build shared library
-        run: pnpm nx build bookingapp-lib
 
       - name: Build backend API
         run: pnpm nx build backend-api

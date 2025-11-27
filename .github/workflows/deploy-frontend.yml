@@ -34,7 +34,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build shared library (if needed)
+      - name: Build shared library
         run: pnpm nx build bookingapp-lib
         continue-on-error: true
 

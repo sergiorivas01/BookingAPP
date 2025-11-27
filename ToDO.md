@@ -8,3 +8,5 @@ frontend unit testing (selenium / playride)
 login 
 
 application insights(Azure)
+
+review git

@@ -5,6 +5,9 @@ node_modules/
 dist/
 *.js.map
 
+# Keep built library artifacts for the shared npm package
+!packages/bookingapp-lib/dist/
+
 # Test coverage
 coverage/
 

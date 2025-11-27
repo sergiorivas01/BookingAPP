@@ -1,0 +1,26 @@
+{
+  "name": "@bookingapp/console",
+  "version": "1.0.0",
+  "description": "Console interface for BookingAPP",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "bookingapp": "dist/index.js"
+  },
+  "scripts": {
+    "dev": "ts-node -r dotenv/config index.ts",
+    "build": "tsc -p ../tsconfig.json",
+    "start": "node ../dist/console/index.js"
+  },
+  "dependencies": {
+    "@azucar_1/bookingapp": "workspace:^1.1.1",
+    "boxen": "^8.0.1",
+    "chalk": "^5.3.0",
+    "cli-table3": "^0.6.5",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2"
+  }
+}

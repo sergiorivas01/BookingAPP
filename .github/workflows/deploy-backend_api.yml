@@ -132,6 +132,7 @@ jobs:
           cp -r dist deploy-package/
 
           # Create package.json with all production dependencies (without file: reference)
+          # Include chalk which is used by @azucar_1/bookingapp
           cat > deploy-package/package.json << 'EOF'
           {
             "name": "bookingapp-api",
@@ -144,6 +145,7 @@ jobs:
               "node": "20.x"
             },
             "dependencies": {
+              "chalk": "^5.3.0",
               "cors": "^2.8.5",
               "dotenv": "^16.3.1",
               "express": "^5.1.0",

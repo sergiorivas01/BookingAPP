@@ -44,6 +44,7 @@ export function getDatabaseConfig(): DatabaseConfig {
     database: config.database,
     user: config.user,
     password: config.password ? '***' : 'not set',
+    hasDatabaseUrl: !!process.env.DATABASE_URL,
   });
 
   return config;
@@ -51,13 +52,38 @@ export function getDatabaseConfig(): DatabaseConfig {
 
 /**
  * Get database URL for node-pg-migrate
+ * Includes SSL parameters when needed for cloud databases
  */
 export function getDatabaseUrl(): string {
+  const config = getDatabaseConfig();
+  
+  // Check if we need SSL (non-localhost or production)
+  const isLocalhost = config.host === 'localhost' || config.host === '127.0.0.1';
+  const useSSL = !isLocalhost || process.env.DB_SSL === 'true' || process.env.NODE_ENV === 'production';
+  
+  // If DATABASE_URL is provided and already includes SSL params, use it as-is
   if (process.env.DATABASE_URL) {
-    return process.env.DATABASE_URL;
+    const url = process.env.DATABASE_URL;
+    // If it already has sslmode parameter, return as-is
+    if (url.includes('sslmode=')) {
+      return url;
+    }
+    // Otherwise, add SSL parameters if needed
+    if (useSSL) {
+      const separator = url.includes('?') ? '&' : '?';
+      return `${url}${separator}sslmode=require`;
+    }
+    return url;
   }
 
-  const config = getDatabaseConfig();
-  return `postgres://${config.user}:${config.password}@${config.host}:${config.port}/${config.database}`;
+  // Build URL from config
+  let url = `postgres://${config.user}:${config.password}@${config.host}:${config.port}/${config.database}`;
+  
+  // Add SSL parameter if needed
+  if (useSSL) {
+    url += '?sslmode=require';
+  }
+  
+  return url;
 }
 

@@ -34,6 +34,7 @@ export function initializePool(): Pool {
       nodeEnv: process.env.NODE_ENV,
     });
     
+    // Create the pool first
     pool = new Pool({
       host: config.host,
       port: config.port,
@@ -50,6 +51,36 @@ export function initializePool(): Pool {
     pool.on('error', (err) => {
       console.error('Unexpected error on idle client', err);
     });
+    
+    // Verify connection and list available tables (after pool is created)
+    pool.connect()
+      .then(async (client: PoolClient) => {
+        try {
+          const result = await client.query<{
+            current_db: string;
+            current_user: string;
+            table_name: string;
+          }>(`
+            SELECT current_database() as current_db, 
+                   current_user as current_user,
+                   table_name 
+            FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_type = 'BASE TABLE'
+            ORDER BY table_name
+          `);
+          console.log('Connected to database:', result.rows[0]?.current_db);
+          console.log('Connected as user:', result.rows[0]?.current_user);
+          console.log('Available tables:', result.rows.map((r: { table_name: string }) => r.table_name));
+        } catch (err) {
+          console.error('Error checking database info:', err);
+        } finally {
+          client.release();
+        }
+      })
+      .catch((err: Error) => {
+        console.error('Error connecting to database:', err);
+      });
   }
   return pool;
 }

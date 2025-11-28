@@ -65,6 +65,20 @@ export class PostgreSQLStorage implements IStorage {
   }
 
   async getAllClients(): Promise<Client[]> {
+    // First, check if table exists and what tables are available
+    try {
+      const tables = await query<{ table_name: string }>(
+        `SELECT table_name 
+         FROM information_schema.tables 
+         WHERE table_schema = 'public' 
+         AND table_type = 'BASE TABLE'
+         ORDER BY table_name`
+      );
+      console.log('Available tables in public schema:', tables.map(t => t.table_name));
+    } catch (error) {
+      console.error('Error checking tables:', error);
+    }
+
     const rows = await query<{
       id: string;
       name: string;

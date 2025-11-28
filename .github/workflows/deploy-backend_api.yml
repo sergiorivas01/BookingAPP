@@ -66,8 +66,19 @@ jobs:
           DB_NAME: ${{ secrets.DB_NAME }}
           DB_USER: ${{ secrets.DB_USER }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_SSL: "true"
+          NODE_ENV: "production"
         run: |
           echo "Running database migrations..."
+          # Ensure DATABASE_URL includes SSL if it doesn't already
+          if [ -n "$DATABASE_URL" ] && [[ ! "$DATABASE_URL" =~ sslmode= ]]; then
+            if [[ "$DATABASE_URL" =~ \? ]]; then
+              export DATABASE_URL="${DATABASE_URL}&sslmode=require"
+            else
+              export DATABASE_URL="${DATABASE_URL}?sslmode=require"
+            fi
+            echo "Updated DATABASE_URL to include SSL"
+          fi
           if pnpm run db:migrate:up; then
             echo "Migrations completed successfully"
             echo "migration_status=success" >> "$GITHUB_OUTPUT"

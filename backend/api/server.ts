@@ -97,6 +97,48 @@ class ApiServer {
       res.json({ status: 'ok', message: 'API is running' });
     });
 
+    // Database diagnostic endpoint
+    this.app.get('/health/db', async (req: Request, res: Response) => {
+      try {
+        const { query } = await import('../../backend/database/connection');
+        const { getDatabaseConfig } = await import('../../backend/database/config');
+        
+        const config = getDatabaseConfig();
+        const dbInfo = await query<{
+          current_db: string;
+          current_user: string;
+          table_name: string;
+        }>(`
+          SELECT current_database() as current_db, 
+                 current_user as current_user,
+                 table_name 
+          FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_type = 'BASE TABLE'
+          ORDER BY table_name
+        `);
+        
+        res.json({
+          config: {
+            host: config.host,
+            port: config.port,
+            database: config.database,
+            user: config.user,
+          },
+          connection: {
+            database: dbInfo[0]?.current_db,
+            user: dbInfo[0]?.current_user,
+          },
+          tables: dbInfo.map(r => r.table_name),
+        });
+      } catch (error) {
+        res.status(500).json({
+          error: 'Database connection failed',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
+    });
+
     // API routes
     this.app.use('/api/clients', clientRoutes(this.clientService));
     this.app.use('/api/reservations', reservationRoutes(this.reservationService, this.clientService));

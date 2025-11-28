@@ -13,14 +13,26 @@ export function initializePool(): Pool {
   if (!pool) {
     const config = getDatabaseConfig();
     
-    // SSL configuration for production (Azure PostgreSQL requires SSL)
-    const sslConfig = process.env.NODE_ENV === 'production' || process.env.DB_SSL === 'true'
+    // SSL configuration: Use SSL for all non-localhost connections
+    // Azure PostgreSQL and most cloud providers require SSL
+    const isLocalhost = config.host === 'localhost' || config.host === '127.0.0.1';
+    const useSSL = !isLocalhost || process.env.DB_SSL === 'true' || process.env.NODE_ENV === 'production';
+    
+    const sslConfig = useSSL
       ? {
           rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false', // Default: true (verify certificate)
-          // For Azure PostgreSQL, you might need to set this to false if certificate validation fails
-          // But it's more secure to keep it true and configure the certificate properly
         }
-      : false; // No SSL in development (localhost)
+      : false;
+    
+    console.log('Database connection config:', {
+      host: config.host,
+      port: config.port,
+      database: config.database,
+      user: config.user,
+      ssl: sslConfig,
+      isLocalhost,
+      nodeEnv: process.env.NODE_ENV,
+    });
     
     pool = new Pool({
       host: config.host,

@@ -126,10 +126,7 @@ jobs:
           cp -r packages/bookingapp-lib/dist deploy-package/packages/bookingapp-lib/ 2>/dev/null || true
           cp packages/bookingapp-lib/package.json deploy-package/packages/bookingapp-lib/
 
-          # Copy node_modules (runtime dependencies)
-          cp -r node_modules deploy-package/ 2>/dev/null || true
-
-          # Minimal package.json for Azure App Service
+          # Create package.json with all production dependencies
           cat > deploy-package/package.json << 'EOF'
           {
             "name": "bookingapp-api",
@@ -137,9 +134,24 @@ jobs:
             "private": true,
             "scripts": {
               "start": "node dist/backend/api/server.js"
+            },
+            "engines": {
+              "node": "20.x"
+            },
+            "dependencies": {
+              "@azucar_1/bookingapp": "file:./packages/bookingapp-lib",
+              "cors": "^2.8.5",
+              "dotenv": "^16.3.1",
+              "express": "^5.1.0",
+              "pg": "^8.11.3"
             }
           }
           EOF
+
+          # Install production dependencies in deploy package
+          cd deploy-package
+          npm install --production --no-audit --no-fund
+          cd ..
 
           # Disable builds on Azure (we ship prebuilt artifacts)
           echo "[config]" > deploy-package/.deployment

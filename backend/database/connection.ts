@@ -12,12 +12,23 @@ let pool: Pool | null = null;
 export function initializePool(): Pool {
   if (!pool) {
     const config = getDatabaseConfig();
+    
+    // SSL configuration for production (Azure PostgreSQL requires SSL)
+    const sslConfig = process.env.NODE_ENV === 'production' || process.env.DB_SSL === 'true'
+      ? {
+          rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false', // Default: true (verify certificate)
+          // For Azure PostgreSQL, you might need to set this to false if certificate validation fails
+          // But it's more secure to keep it true and configure the certificate properly
+        }
+      : false; // No SSL in development (localhost)
+    
     pool = new Pool({
       host: config.host,
       port: config.port,
       database: config.database,
       user: config.user,
       password: config.password,
+      ssl: sslConfig,
       max: 20, // Maximum number of clients in the pool
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 2000,

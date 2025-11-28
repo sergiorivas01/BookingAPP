@@ -111,6 +111,16 @@ jobs:
       - name: Type check backend API
         run: pnpm nx run backend-api:lint
 
+      - name: Build shared library
+        run: |
+          # Build the shared library if it hasn't been built yet
+          if [ ! -d "packages/bookingapp-lib/dist" ]; then
+            echo "Building shared library..."
+            pnpm nx build bookingapp-lib || echo "Library build skipped or failed"
+          else
+            echo "Shared library already built"
+          fi
+
       - name: Build backend API
         run: pnpm nx build backend-api
 
@@ -147,9 +157,20 @@ jobs:
           npm install --production --no-audit --no-fund
 
           # Manually install the shared library by copying it to node_modules
-          mkdir -p node_modules/@azucar_1/bookingapp
-          cp -r ../../packages/bookingapp-lib/dist node_modules/@azucar_1/bookingapp/
-          cp ../../packages/bookingapp-lib/package.json node_modules/@azucar_1/bookingapp/
+          # We're in deploy-package, so we need to go back to root to access packages/
+          if [ -d "../packages/bookingapp-lib/dist" ]; then
+            echo "Copying shared library to node_modules..."
+            mkdir -p node_modules/@azucar_1/bookingapp
+            cp -r ../packages/bookingapp-lib/dist node_modules/@azucar_1/bookingapp/
+            cp ../packages/bookingapp-lib/package.json node_modules/@azucar_1/bookingapp/
+            echo "Shared library copied successfully"
+          else
+            echo "ERROR: Shared library dist not found at ../packages/bookingapp-lib/dist"
+            echo "Current directory: $(pwd)"
+            echo "Contents of ../packages/bookingapp-lib:"
+            ls -la ../packages/bookingapp-lib/ || echo "Directory does not exist"
+            exit 1
+          fi
 
           cd ..
 

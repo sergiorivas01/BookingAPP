@@ -18,11 +18,31 @@ import type { ReservationWithClient } from '../types/auxiliary';
 
 // If VITE_API_URL is set, use it directly (should include /api)
 // Otherwise, use /api which will be proxied by Vite
-const API_BASE_URL = import.meta.env.VITE_API_URL 
-  ? (import.meta.env.VITE_API_URL.endsWith('/api') 
-      ? import.meta.env.VITE_API_URL 
-      : `${import.meta.env.VITE_API_URL}/api`)
-  : '/api';
+const getApiBaseUrl = (): string => {
+  const viteApiUrl = import.meta.env.VITE_API_URL;
+  
+  if (!viteApiUrl) {
+    return '/api';
+  }
+  
+  // Ensure the URL is absolute (starts with http:// or https://)
+  let baseUrl = viteApiUrl.trim();
+  if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
+    baseUrl = `https://${baseUrl}`;
+  }
+  
+  // Remove trailing slash if present
+  baseUrl = baseUrl.replace(/\/$/, '');
+  
+  // Add /api if not already present
+  if (!baseUrl.endsWith('/api')) {
+    baseUrl = `${baseUrl}/api`;
+  }
+  
+  return baseUrl;
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 class ApiError extends Error {
   constructor(

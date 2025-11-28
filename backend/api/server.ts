@@ -104,18 +104,36 @@ class ApiServer {
         const { getDatabaseConfig } = await import('../../backend/database/config');
         
         const config = getDatabaseConfig();
-        const dbInfo = await query<{
-          current_db: string;
-          current_user: string;
-          table_name: string;
-        }>(`
-          SELECT current_database() as current_db, 
-                 current_user as current_user,
-                 table_name 
+        
+        // Get database and user info
+        const dbInfo = await query<{ db: string; user: string }>(
+          'SELECT current_database() as db, current_user as user'
+        );
+        
+        // Get tables in public schema
+        const publicTables = await query<{ table_name: string }>(`
+          SELECT table_name 
           FROM information_schema.tables 
           WHERE table_schema = 'public' 
           AND table_type = 'BASE TABLE'
           ORDER BY table_name
+        `);
+        
+        // Get all schemas
+        const schemas = await query<{ schema_name: string }>(`
+          SELECT schema_name 
+          FROM information_schema.schemata 
+          WHERE schema_name NOT IN ('information_schema', 'pg_catalog', 'pg_toast')
+          ORDER BY schema_name
+        `);
+        
+        // Get all tables in all schemas
+        const allTables = await query<{ table_schema: string; table_name: string }>(`
+          SELECT table_schema, table_name 
+          FROM information_schema.tables 
+          WHERE table_type = 'BASE TABLE'
+          AND table_schema NOT IN ('information_schema', 'pg_catalog')
+          ORDER BY table_schema, table_name
         `);
         
         res.json({
@@ -126,10 +144,14 @@ class ApiServer {
             user: config.user,
           },
           connection: {
-            database: dbInfo[0]?.current_db,
-            user: dbInfo[0]?.current_user,
+            database: dbInfo[0]?.db,
+            user: dbInfo[0]?.user,
           },
-          tables: dbInfo.map(r => r.table_name),
+          schemas: schemas.map(s => s.schema_name),
+          tables: {
+            public: publicTables.map(t => t.table_name),
+            all: allTables.map(t => `${t.table_schema}.${t.table_name}`),
+          },
         });
       } catch (error) {
         res.status(500).json({

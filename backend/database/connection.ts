@@ -56,22 +56,49 @@ export function initializePool(): Pool {
     pool.connect()
       .then(async (client: PoolClient) => {
         try {
-          const result = await client.query<{
-            current_db: string;
-            current_user: string;
-            table_name: string;
-          }>(`
-            SELECT current_database() as current_db, 
-                   current_user as current_user,
-                   table_name 
+          // Get database and user info separately
+          const dbInfo = await client.query('SELECT current_database() as db, current_user as user');
+          const dbName = dbInfo.rows[0]?.db;
+          const dbUser = dbInfo.rows[0]?.user;
+          
+          console.log('Connected to database:', dbName);
+          console.log('Connected as user:', dbUser);
+          
+          // Get all tables in public schema
+          const tablesResult = await client.query<{ table_name: string }>(`
+            SELECT table_name 
             FROM information_schema.tables 
             WHERE table_schema = 'public' 
             AND table_type = 'BASE TABLE'
             ORDER BY table_name
           `);
-          console.log('Connected to database:', result.rows[0]?.current_db);
-          console.log('Connected as user:', result.rows[0]?.current_user);
-          console.log('Available tables:', result.rows.map((r: { table_name: string }) => r.table_name));
+          console.log('Available tables in public schema:', tablesResult.rows.map(r => r.table_name));
+          
+          // Also check all schemas
+          const allSchemas = await client.query<{ schema_name: string }>(`
+            SELECT schema_name 
+            FROM information_schema.schemata 
+            WHERE schema_name NOT IN ('information_schema', 'pg_catalog', 'pg_toast')
+            ORDER BY schema_name
+          `);
+          console.log('Available schemas:', allSchemas.rows.map(r => r.schema_name));
+          
+          // Check if tables exist in any schema
+          const allTables = await client.query<{ table_schema: string; table_name: string }>(`
+            SELECT table_schema, table_name 
+            FROM information_schema.tables 
+            WHERE table_type = 'BASE TABLE'
+            AND table_schema NOT IN ('information_schema', 'pg_catalog')
+            ORDER BY table_schema, table_name
+          `);
+          if (allTables.rows.length > 0) {
+            console.log('All tables in database:');
+            allTables.rows.forEach(t => {
+              console.log(`  ${t.table_schema}.${t.table_name}`);
+            });
+          } else {
+            console.log('⚠️  No tables found in any schema!');
+          }
         } catch (err) {
           console.error('Error checking database info:', err);
         } finally {

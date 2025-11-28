@@ -6,16 +6,29 @@ on:
     paths:
       - "backend/**"
       - "packages/bookingapp-lib/**"
-      - ".github/workflows/deploy-api.yml"
+      - ".github/workflows/deploy-backend_api.yml"
       - "package.json"
       - "pnpm-workspace.yaml"
+
+  pull_request:
+    branches: [main, dev]
+    paths:
+      - "backend/**"
+      - ".github/workflows/deploy-backend_api.yml"
 
   workflow_dispatch:
 
 jobs:
-  deploy-backend:
+  migrate:
+    name: Run Database Migrations
     runs-on: ubuntu-latest
-    environment: production
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    env:
+      DB_HOST: ${{ secrets.DB_HOST }}
+      DB_PORT: ${{ secrets.DB_PORT }}
+      DB_NAME: ${{ secrets.DB_NAME }}
+      DB_USER: ${{ secrets.DB_USER }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
 
     steps:
       - name: Checkout code
@@ -35,10 +48,17 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --prod=false
 
-      - name: Build backend API
-        run: pnpm nx build backend-api
+      - name: Check for migrations
+        run: |
+          if [ -z "$(ls -A backend/database/migrations/* 2>/dev/null)" ]; then
+            echo "No migrations found, skipping..."
+            exit 0
+          fi
+          echo "Found migrations:"
+          ls -la backend/database/migrations/
 
-      - name: Run database migrations
+      - name: Run migrations
+        id: migrate
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DB_HOST: ${{ secrets.DB_HOST }}
@@ -46,100 +66,88 @@ jobs:
           DB_NAME: ${{ secrets.DB_NAME }}
           DB_USER: ${{ secrets.DB_USER }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-        run: pnpm run db:migrate:up
+        run: |
+          echo "Running database migrations..."
+          if pnpm run db:migrate:up; then
+            echo "Migrations completed successfully"
+            echo "migration_status=success" >> "$GITHUB_OUTPUT"
+          else
+            echo "Migration failed with exit code $?"
+            echo "migration_status=failed" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+
+      - name: Check migration status
+        if: steps.migrate.outcome == 'failure'
+        run: |
+          echo "::error::Database migrations failed! Deployment will not proceed."
+          echo "Please check the migration logs above for details."
+          exit 1
+
+  backend:
+    name: Type Check and Build Backend API
+    runs-on: ubuntu-latest
+    needs: migrate
+    if: needs.migrate.result == 'success' || needs.migrate.result == 'skipped'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8.15.5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --prod=false
+
+      - name: Type check backend API
+        run: pnpm nx run backend-api:lint
+
+      - name: Build backend API
+        run: pnpm nx build backend-api
 
       - name: Prepare deployment package
         run: |
-          # Create deployment directory
-          mkdir -p deploy
+          mkdir -p deploy-package
 
-          # Copy built application files
-          cp -r dist deploy/
+          # Copy compiled code
+          cp -r dist deploy-package/
 
-          # Copy the compiled shared library (needed for runtime)
-          mkdir -p deploy/packages/bookingapp-lib
-          cp -r packages/bookingapp-lib/dist deploy/packages/bookingapp-lib/ 2>/dev/null || true
-          cp packages/bookingapp-lib/package.json deploy/packages/bookingapp-lib/
+          # Copy shared library build (for @azucar_1/bookingapp)
+          mkdir -p deploy-package/packages/bookingapp-lib
+          cp -r packages/bookingapp-lib/dist deploy-package/packages/bookingapp-lib/ 2>/dev/null || true
+          cp packages/bookingapp-lib/package.json deploy-package/packages/bookingapp-lib/
 
-          # Copy production node_modules (all dependencies needed at runtime)
-          # This includes the workspace dependencies resolved by pnpm
-          cp -r node_modules deploy/ 2>/dev/null || true
+          # Copy node_modules (runtime dependencies)
+          cp -r node_modules deploy-package/ 2>/dev/null || true
 
-          # Create a simplified package.json for Azure App Service
-          # This tells Azure how to start the application
-          cat > deploy/package.json << 'EOF'
+          # Minimal package.json for Azure App Service
+          cat > deploy-package/package.json << 'EOF'
           {
             "name": "bookingapp-api",
             "version": "1.0.0",
             "private": true,
             "scripts": {
               "start": "node dist/backend/api/server.js"
-            },
-            "engines": {
-              "node": "20.x"
-            },
-            "dependencies": {
-              "@azucar_1/bookingapp": "file:./packages/bookingapp-lib",
-              "cors": "^2.8.5",
-              "dotenv": "^16.3.1",
-              "express": "^5.1.0",
-              "pg": "^8.11.3"
             }
           }
           EOF
 
-          # Create .deployment file to tell Azure this is the root
-          echo "[config]" > deploy/.deployment
-          echo "SCM_DO_BUILD_DURING_DEPLOYMENT=false" >> deploy/.deployment
-
-      - name: Create deployment package
-        run: |
-          cd deploy
-          zip -r ../api-deployment.zip . -x "*.git*" -x "*.DS_Store"
-          cd ..
-          ls -lh api-deployment.zip
-
-      - name: Login to Azure
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          # Disable builds on Azure (we ship prebuilt artifacts)
+          echo "[config]" > deploy-package/.deployment
+          echo "SCM_DO_BUILD_DURING_DEPLOYMENT=false" >> deploy-package/.deployment
 
       - name: Deploy to Azure Web App
-        id: deploy-to-azure
-        uses: azure/webapps-deploy@v3
+        uses: azure/webapps-deploy@v2
         with:
           app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: ./api-deployment.zip
-
-      - name: Configure Azure App Service startup command
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az webapp config set \
-              --name ${{ secrets.AZURE_WEBAPP_NAME }} \
-              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-              --startup-file "node dist/backend/api/server.js"
-
-      - name: Set environment variables in Azure App Service
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az webapp config appsettings set \
-              --name ${{ secrets.AZURE_WEBAPP_NAME }} \
-              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-              --settings \
-                PORT=8080 \
-                NODE_ENV=production \
-                DATABASE_URL="${{ secrets.DATABASE_URL }}" \
-                DB_HOST="${{ secrets.DB_HOST }}" \
-                DB_PORT="${{ secrets.DB_PORT }}" \
-                DB_NAME="${{ secrets.DB_NAME }}" \
-                DB_USER="${{ secrets.DB_USER }}" \
-                DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
-                FRONTEND_URL="${{ secrets.FRONTEND_URL }}"
-
-      - name: Verify deployment
-        run: |
-          echo "✅ Backend API deployed successfully to Azure App Service"
-          echo "📡 API should be available at: https://${{ secrets.AZURE_WEBAPP_NAME }}.azurewebsites.net"
+          package: deploy-package

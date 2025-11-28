@@ -47,10 +47,37 @@ class ApiServer {
 
   private setupMiddleware(): void {
     // CORS configuration
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    console.log(`CORS configured for origin: ${frontendUrl}`);
+    
     this.app.use(
       cors({
-        origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+        origin: (origin, callback) => {
+          // Allow requests with no origin (like mobile apps or curl requests)
+          if (!origin) {
+            return callback(null, true);
+          }
+          
+          // Allow the configured frontend URL
+          if (origin === frontendUrl) {
+            return callback(null, true);
+          }
+          
+          // In development, allow localhost
+          if (process.env.NODE_ENV !== 'production' && origin.startsWith('http://localhost')) {
+            return callback(null, true);
+          }
+          
+          // Allow Azure Static Web Apps (check if origin contains azurestaticapps.net)
+          if (origin.includes('azurestaticapps.net')) {
+            return callback(null, true);
+          }
+          
+          callback(new Error('Not allowed by CORS'));
+        },
         credentials: true,
+        methods: ['GET', 'POST', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization'],
       })
     );
 

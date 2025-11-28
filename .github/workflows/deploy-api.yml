@@ -1,0 +1,140 @@
+name: Deploy API
+
+on:
+  push:
+    branches: [main, dev]
+    paths:
+      - "backend/**"
+      - "packages/bookingapp-lib/**"
+      - ".github/workflows/deploy-api.yml"
+      - "package.json"
+      - "pnpm-workspace.yaml"
+
+  workflow_dispatch:
+
+jobs:
+  deploy-backend:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8.15.5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --prod=false
+
+      - name: Build backend API
+        run: pnpm nx build backend-api
+
+      - name: Run database migrations
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        run: pnpm run db:migrate:up
+
+      - name: Prepare deployment package
+        run: |
+          # Create deployment directory
+          mkdir -p deploy
+
+          # Copy built application files
+          cp -r dist deploy/
+
+          # Copy the compiled shared library (needed for runtime)
+          mkdir -p deploy/packages/bookingapp-lib
+          cp -r packages/bookingapp-lib/dist deploy/packages/bookingapp-lib/ 2>/dev/null || true
+          cp packages/bookingapp-lib/package.json deploy/packages/bookingapp-lib/
+
+          # Copy production node_modules (all dependencies needed at runtime)
+          # This includes the workspace dependencies resolved by pnpm
+          cp -r node_modules deploy/ 2>/dev/null || true
+
+          # Create a simplified package.json for Azure App Service
+          # This tells Azure how to start the application
+          cat > deploy/package.json << 'EOF'
+          {
+            "name": "bookingapp-api",
+            "version": "1.0.0",
+            "private": true,
+            "scripts": {
+              "start": "node dist/backend/api/server.js"
+            },
+            "engines": {
+              "node": "20.x"
+            },
+            "dependencies": {
+              "@azucar_1/bookingapp": "file:./packages/bookingapp-lib",
+              "cors": "^2.8.5",
+              "dotenv": "^16.3.1",
+              "express": "^5.1.0",
+              "pg": "^8.11.3"
+            }
+          }
+          EOF
+
+          # Create .deployment file to tell Azure this is the root
+          echo "[config]" > deploy/.deployment
+          echo "SCM_DO_BUILD_DURING_DEPLOYMENT=false" >> deploy/.deployment
+
+      - name: Create deployment package
+        run: |
+          cd deploy
+          zip -r ../api-deployment.zip . -x "*.git*" -x "*.DS_Store"
+          cd ..
+          ls -lh api-deployment.zip
+
+      - name: Deploy to Azure Web App
+        id: deploy-to-azure
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: ./api-deployment.zip
+
+      - name: Configure Azure App Service startup command
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az webapp config set \
+              --name ${{ secrets.AZURE_WEBAPP_NAME }} \
+              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --startup-file "node dist/backend/api/server.js"
+
+      - name: Set environment variables in Azure App Service
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az webapp config appsettings set \
+              --name ${{ secrets.AZURE_WEBAPP_NAME }} \
+              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --settings \
+                PORT=8080 \
+                NODE_ENV=production \
+                DATABASE_URL="${{ secrets.DATABASE_URL }}" \
+                DB_HOST="${{ secrets.DB_HOST }}" \
+                DB_PORT="${{ secrets.DB_PORT }}" \
+                DB_NAME="${{ secrets.DB_NAME }}" \
+                DB_USER="${{ secrets.DB_USER }}" \
+                DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
+                FRONTEND_URL="${{ secrets.FRONTEND_URL }}"
+
+      - name: Verify deployment
+        run: |
+          echo "✅ Backend API deployed successfully to Azure App Service"
+          echo "📡 API should be available at: https://${{ secrets.AZURE_WEBAPP_NAME }}.azurewebsites.net"

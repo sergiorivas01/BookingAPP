@@ -6,7 +6,7 @@ on:
     paths:
       - "frontend/**"
       - "packages/bookingapp-lib/**"
-      - "github/workflows/deploy-frontend.yml"
+      - ".github/workflows/deploy-frontend.yml"
       - "package.json"
       - "pnpm-workspace.yaml"
 
@@ -40,6 +40,8 @@ jobs:
         continue-on-error: true
 
       - name: Build frontend app
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
         run: pnpm nx build frontend
 
       - name: Deploy to Azure Static Web Apps

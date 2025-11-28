@@ -121,12 +121,7 @@ jobs:
           # Copy compiled code
           cp -r dist deploy-package/
 
-          # Copy shared library build (for @azucar_1/bookingapp)
-          mkdir -p deploy-package/packages/bookingapp-lib
-          cp -r packages/bookingapp-lib/dist deploy-package/packages/bookingapp-lib/ 2>/dev/null || true
-          cp packages/bookingapp-lib/package.json deploy-package/packages/bookingapp-lib/
-
-          # Create package.json with all production dependencies
+          # Create package.json with all production dependencies (without file: reference)
           cat > deploy-package/package.json << 'EOF'
           {
             "name": "bookingapp-api",
@@ -139,7 +134,6 @@ jobs:
               "node": "20.x"
             },
             "dependencies": {
-              "@azucar_1/bookingapp": "file:./packages/bookingapp-lib",
               "cors": "^2.8.5",
               "dotenv": "^16.3.1",
               "express": "^5.1.0",
@@ -151,6 +145,12 @@ jobs:
           # Install production dependencies in deploy package
           cd deploy-package
           npm install --production --no-audit --no-fund
+
+          # Manually install the shared library by copying it to node_modules
+          mkdir -p node_modules/@azucar_1/bookingapp
+          cp -r ../../packages/bookingapp-lib/dist node_modules/@azucar_1/bookingapp/
+          cp ../../packages/bookingapp-lib/package.json node_modules/@azucar_1/bookingapp/
+
           cd ..
 
           # Disable builds on Azure (we ship prebuilt artifacts)

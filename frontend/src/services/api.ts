@@ -56,6 +56,41 @@ class ApiError extends Error {
   }
 }
 
+/**
+ * Safely track dependency without blocking the API call
+ */
+function safeTrackDependency(
+  name: string,
+  command: string,
+  elapsed: number,
+  success: boolean,
+  dependencyTypeName: string,
+  properties?: { [key: string]: string },
+  responseCode?: number
+): void {
+  try {
+    trackDependency(name, command, elapsed, success, dependencyTypeName, properties, responseCode);
+  } catch (error) {
+    // Silently fail - don't let telemetry errors affect API calls
+    console.warn('Failed to track dependency (non-blocking):', error);
+  }
+}
+
+/**
+ * Safely track exception without blocking the API call
+ */
+function safeTrackException(
+  exception: Error,
+  properties?: { [key: string]: string }
+): void {
+  try {
+    trackException(exception, properties);
+  } catch (error) {
+    // Silently fail - don't let telemetry errors affect API calls
+    console.warn('Failed to track exception (non-blocking):', error);
+  }
+}
+
 async function fetchApi<T>(
   endpoint: string,
   options?: RequestInit
@@ -64,20 +99,27 @@ async function fetchApi<T>(
   const method = options?.method || 'GET';
   const startTime = performance.now();
   
+  // Create abort controller for timeout
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+  
   try {
     const response = await fetch(url, {
       ...options,
+      signal: options?.signal || controller.signal,
       headers: {
         'Content-Type': 'application/json',
         ...options?.headers,
       },
     });
+    
+    clearTimeout(timeoutId);
 
     const elapsed = performance.now() - startTime;
     const success = response.ok;
 
-    // Track API call as dependency
-    trackDependency(
+    // Track API call as dependency (non-blocking)
+    safeTrackDependency(
       `${method} ${endpoint}`,
       url,
       Math.round(elapsed),
@@ -98,8 +140,8 @@ async function fetchApi<T>(
         response.statusText
       );
       
-      // Track failed API calls as exceptions
-      trackException(error, {
+      // Track failed API calls as exceptions (non-blocking)
+      safeTrackException(error, {
         endpoint,
         method,
         statusCode: response.status.toString(),
@@ -111,33 +153,63 @@ async function fetchApi<T>(
 
     return await response.json();
   } catch (error) {
+    clearTimeout(timeoutId);
     const elapsed = performance.now() - startTime;
     
-    // Track failed network calls
+    // Check if it's an abort error (timeout)
+    if (error instanceof Error && error.name === 'AbortError') {
+      const timeoutError = new ApiError('Request timeout: The server did not respond in time');
+      setTimeout(() => {
+        safeTrackDependency(
+          `${method} ${endpoint}`,
+          url,
+          Math.round(elapsed),
+          false,
+          'HTTP',
+          {
+            method,
+            endpoint,
+            error: 'Timeout',
+          }
+        );
+        safeTrackException(timeoutError, {
+          endpoint,
+          method,
+          url,
+          errorType: 'Timeout',
+        });
+      }, 0);
+      throw timeoutError;
+    }
+    
+    // Track failed network calls (non-blocking)
     if (!(error instanceof ApiError)) {
       const networkError = new ApiError(
         `Network error: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
       
-      trackDependency(
-        `${method} ${endpoint}`,
-        url,
-        Math.round(elapsed),
-        false,
-        'HTTP',
-        {
-          method,
+      // Track dependency and exception asynchronously to not block error propagation
+      setTimeout(() => {
+        safeTrackDependency(
+          `${method} ${endpoint}`,
+          url,
+          Math.round(elapsed),
+          false,
+          'HTTP',
+          {
+            method,
+            endpoint,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          }
+        );
+        
+        safeTrackException(networkError, {
           endpoint,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        }
-      );
-      
-      trackException(networkError, {
-        endpoint,
-        method,
-        url,
-        errorType: 'NetworkError',
-      });
+          method,
+          url,
+          errorType: 'NetworkError',
+        });
+      }, 0);
       
       throw networkError;
     }

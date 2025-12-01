@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@azucar_1/bookingapp": "workspace:1.1.1",
+    "@microsoft/applicationinsights-web": "^3.3.10",
     "@playwright/test": "^1.57.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

@@ -15,6 +15,7 @@ import type {
   Property,
 } from '@azucar_1/bookingapp';
 import type { ReservationWithClient } from '../types/auxiliary';
+import { trackDependency, trackException } from './applicationInsights';
 
 // If VITE_API_URL is set, use it directly (should include /api)
 // Otherwise, use /api which will be proxied by Vite
@@ -60,6 +61,8 @@ async function fetchApi<T>(
   options?: RequestInit
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
+  const method = options?.method || 'GET';
+  const startTime = performance.now();
   
   try {
     const response = await fetch(url, {
@@ -70,20 +73,76 @@ async function fetchApi<T>(
       },
     });
 
+    const elapsed = performance.now() - startTime;
+    const success = response.ok;
+
+    // Track API call as dependency
+    trackDependency(
+      `${method} ${endpoint}`,
+      url,
+      Math.round(elapsed),
+      success,
+      'HTTP',
+      {
+        method,
+        statusCode: response.status.toString(),
+        endpoint,
+      },
+      response.status
+    );
+
     if (!response.ok) {
-      throw new ApiError(
+      const error = new ApiError(
         `API Error: ${response.statusText}`,
         response.status,
         response.statusText
       );
+      
+      // Track failed API calls as exceptions
+      trackException(error, {
+        endpoint,
+        method,
+        statusCode: response.status.toString(),
+        url,
+      });
+      
+      throw error;
     }
 
     return await response.json();
   } catch (error) {
-    if (error instanceof ApiError) {
-      throw error;
+    const elapsed = performance.now() - startTime;
+    
+    // Track failed network calls
+    if (!(error instanceof ApiError)) {
+      const networkError = new ApiError(
+        `Network error: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+      
+      trackDependency(
+        `${method} ${endpoint}`,
+        url,
+        Math.round(elapsed),
+        false,
+        'HTTP',
+        {
+          method,
+          endpoint,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        }
+      );
+      
+      trackException(networkError, {
+        endpoint,
+        method,
+        url,
+        errorType: 'NetworkError',
+      });
+      
+      throw networkError;
     }
-    throw new ApiError(`Network error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    
+    throw error;
   }
 }
 

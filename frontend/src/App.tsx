@@ -4,8 +4,12 @@ import Dashboard from './pages/Dashboard/Dashboard';
 import Clients from './pages/Clients/Clients';
 import Reservations from './pages/Reservations/Reservations';
 import Properties from './pages/Properties/Properties';
+import { usePageTracking } from './hooks/useApplicationInsights';
 
 function App() {
+  // Automatically track page views on route changes
+  usePageTracking();
+
   return (
     <Layout>
       <Routes>

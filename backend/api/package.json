@@ -13,12 +13,20 @@
   },
   "dependencies": {
     "@azucar_1/bookingapp": "workspace:^1.1.1",
+    "connect-pg-simple": "^10.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^5.1.0",
+    "express-session": "^1.18.2",
+    "passport": "^0.7.0",
+    "passport-oauth2": "^1.8.0",
     "pg": "^8.11.3"
   },
   "devDependencies": {
+    "@types/connect-pg-simple": "^7.0.3",
+    "@types/express-session": "^1.18.2",
+    "@types/passport": "^1.0.17",
+    "@types/passport-oauth2": "^1.8.0",
     "nodemon": "^3.0.2",
     "ts-node": "^10.9.2"
   }

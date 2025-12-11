@@ -3,12 +3,21 @@ import 'dotenv/config';
 
 import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import { initializePool, closePool } from '../../backend/database/connection';
+import session from 'express-session';
+import passport from 'passport';
+import connectPgSimple from 'connect-pg-simple';
+import { initializePool, closePool, getPool } from '../../backend/database/connection';
 import { PostgreSQLStorage } from '../../backend/database/PostgreSQLStorage';
 import { ClientService, ReservationService } from '@azucar_1/bookingapp';
 import { clientRoutes } from './routes/clients';
 import { reservationRoutes } from './routes/reservations';
 import { propertyRoutes } from './routes/properties';
+import { 
+  createOAuth2Strategy, 
+  createAuthRoutes, 
+  getSessionConfig,
+  UserService 
+} from '../../backend/auth';
 
 /**
  * Express API Server
@@ -20,6 +29,8 @@ class ApiServer {
   private clientService!: ClientService;
   private reservationService!: ReservationService;
   private storage!: PostgreSQLStorage;
+  private userService!: UserService;
+  private authEnabled: boolean = false;
 
   constructor() {
     this.app = express();
@@ -43,6 +54,7 @@ class ApiServer {
     this.storage = new PostgreSQLStorage();
     this.clientService = new ClientService(this.storage);
     this.reservationService = new ReservationService(this.storage);
+    this.userService = new UserService();
   }
 
   private setupMiddleware(): void {
@@ -110,11 +122,78 @@ class ApiServer {
     // Parse JSON bodies
     this.app.use(express.json());
 
+    // Setup authentication if enabled
+    this.setupAuthentication();
+
     // Request logging
     this.app.use((req: Request, res: Response, next: NextFunction) => {
       console.log(`${req.method} ${req.path}`);
       next();
     });
+  }
+
+  private setupAuthentication(): void {
+    // Check if OAuth 2.0 is enabled
+    const oauthEnabled = process.env.OAUTH2_ENABLED === 'true';
+    
+    if (!oauthEnabled) {
+      console.log('OAuth 2.0 authentication is disabled. Set OAUTH2_ENABLED=true to enable.');
+      return;
+    }
+
+    try {
+      this.authEnabled = true;
+      console.log('Setting up OAuth 2.0 authentication...');
+
+      // Setup session store with PostgreSQL
+      const PgSession = connectPgSimple(session);
+      const pool = getPool();
+      
+      if (!pool) {
+        throw new Error('Database pool not initialized');
+      }
+
+      // Configure session middleware
+      const sessionConfig = getSessionConfig();
+      this.app.use(
+        session({
+          ...sessionConfig,
+          store: new PgSession({
+            pool: pool as any,
+            tableName: 'session',
+            createTableIfMissing: false,
+          }),
+        })
+      );
+
+      // Initialize Passport
+      this.app.use(passport.initialize());
+      this.app.use(passport.session());
+
+      // Configure Passport serialization
+      passport.serializeUser((user: any, done) => {
+        done(null, user.id);
+      });
+
+      passport.deserializeUser(async (id: string, done) => {
+        try {
+          const user = await this.userService.findById(id);
+          done(null, user);
+        } catch (error) {
+          done(error);
+        }
+      });
+
+      // Setup OAuth 2.0 strategy
+      const oauth2Strategy = createOAuth2Strategy(this.userService);
+      passport.use('oauth2', oauth2Strategy);
+
+      console.log('✓ OAuth 2.0 authentication configured successfully');
+    } catch (error) {
+      console.error('Failed to setup authentication:', error);
+      console.warn('Continuing without authentication...');
+      this.authEnabled = false;
+    }
   }
 
   /**
@@ -137,7 +216,11 @@ class ApiServer {
   private setupRoutes(): void {
     // Health check endpoint
     this.app.get('/health', (req: Request, res: Response) => {
-      res.json({ status: 'ok', message: 'API is running' });
+      res.json({ 
+        status: 'ok', 
+        message: 'API is running',
+        authEnabled: this.authEnabled,
+      });
     });
 
     // Database diagnostic endpoint
@@ -196,6 +279,13 @@ class ApiServer {
         },
       });
     }));
+
+    // Authentication routes (if enabled)
+    if (this.authEnabled) {
+      const authRoutes = createAuthRoutes();
+      this.app.use('/auth', authRoutes);
+      console.log('✓ Authentication routes mounted at /auth');
+    }
 
     // API routes
     this.app.use('/api/clients', clientRoutes(this.clientService));

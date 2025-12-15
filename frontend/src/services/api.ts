@@ -107,6 +107,7 @@ async function fetchApi<T>(
     const response = await fetch(url, {
       ...options,
       signal: options?.signal || controller.signal,
+      credentials: 'include', // Include cookies for session management
       headers: {
         'Content-Type': 'application/json',
         ...options?.headers,
@@ -320,6 +321,132 @@ export const propertyApi = {
 
   async getById(id: string): Promise<Property> {
     return fetchApi<Property>(`/properties/${id}`);
+  },
+};
+
+// Auth API
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  picture?: string;
+  provider: string;
+}
+
+export interface AuthStatus {
+  authenticated: boolean;
+  user: {
+    id: string;
+    email: string;
+    name: string;
+  } | null;
+}
+
+// Helper to get backend base URL
+const getBackendBaseUrl = (): string => {
+  if (import.meta.env.VITE_API_URL) {
+    const url = import.meta.env.VITE_API_URL.trim();
+    // Remove /api suffix if present
+    return url.replace(/\/api\/?$/, '');
+  }
+  // In development, use proxy (relative URL)
+  // In production or when VITE_API_URL is set, use absolute URL
+  return import.meta.env.PROD ? 'http://localhost:8006' : '';
+};
+
+export const authApi = {
+  /**
+   * Initiate OAuth 2.0 login
+   * Redirects to backend /auth/login which then redirects to OAuth provider
+   * Uses absolute URL for full page redirect
+   */
+  login(): void {
+    // Always use absolute URL for OAuth redirect to ensure cookies work correctly
+    const backendUrl = getBackendBaseUrl();
+    const loginUrl = backendUrl 
+      ? `${backendUrl}/auth/login`
+      : 'http://localhost:8006/auth/login'; // Default to backend URL in development
+    window.location.href = loginUrl;
+  },
+
+  /**
+   * Logout current user
+   */
+  async logout(): Promise<void> {
+    const backendUrl = getBackendBaseUrl();
+    const logoutUrl = backendUrl 
+      ? `${backendUrl}/auth/logout`
+      : '/auth/logout'; // Use proxy in development
+    
+    const response = await fetch(logoutUrl, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new ApiError(
+        `API Error: ${response.statusText}`,
+        response.status,
+        response.statusText
+      );
+    }
+  },
+
+  /**
+   * Get current authenticated user
+   */
+  async getCurrentUser(): Promise<User> {
+    const backendUrl = getBackendBaseUrl();
+    const meUrl = backendUrl 
+      ? `${backendUrl}/auth/me`
+      : '/auth/me'; // Use proxy in development
+    
+    const response = await fetch(meUrl, {
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new ApiError(
+        `API Error: ${response.statusText}`,
+        response.status,
+        response.statusText
+      );
+    }
+
+    return await response.json();
+  },
+
+  /**
+   * Check authentication status
+   */
+  async checkStatus(): Promise<AuthStatus> {
+    const backendUrl = getBackendBaseUrl();
+    const statusUrl = backendUrl 
+      ? `${backendUrl}/auth/status`
+      : '/auth/status'; // Use proxy in development
+    
+    const response = await fetch(statusUrl, {
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new ApiError(
+        `API Error: ${response.statusText}`,
+        response.status,
+        response.statusText
+      );
+    }
+
+    return await response.json();
   },
 };
 

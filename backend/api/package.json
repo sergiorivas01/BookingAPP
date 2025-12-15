@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "nodemon --exec \"node -r dotenv/config -r ts-node/register server.ts\" --watch server.ts --watch routes --ext ts",
     "build": "tsc -p ../../tsconfig.json",
-    "start": "node ../../dist/backend/api/server.js",
+    "start": "cd ../.. && NODE_PATH=\"$PWD/backend/api/node_modules:$PWD/node_modules/.pnpm\" node -r dotenv/config dist/backend/api/server.js dotenv_config_path=backend/api/.env",
     "lint": "tsc --noEmit"
   },
   "dependencies": {

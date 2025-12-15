@@ -11,6 +11,12 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
     picture: { type: 'text' },
     provider: { type: 'varchar(100)', notNull: true },
     provider_id: { type: 'varchar(255)', notNull: true },
+    client_id: { 
+      type: 'varchar(255)', 
+      references: 'clients(id)', 
+      onDelete: 'SET NULL',
+      onUpdate: 'CASCADE'
+    },
     created_at: { type: 'timestamp', notNull: true, default: pgm.func('current_timestamp') },
     updated_at: { type: 'timestamp', notNull: true, default: pgm.func('current_timestamp') },
   });
@@ -23,6 +29,9 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
 
   // Create index for email
   pgm.createIndex('users', 'email', { name: 'idx_users_email' });
+
+  // Create index for client_id relationship
+  pgm.createIndex('users', 'client_id', { name: 'idx_users_client_id' });
 
   // Add trigger to update updated_at
   pgm.createTrigger('users', 'update_users_updated_at', {
@@ -49,6 +58,7 @@ export async function down(pgm: MigrationBuilder): Promise<void> {
 
   // Drop indexes
   pgm.dropIndex('session', 'idx_session_expire', { ifExists: true });
+  pgm.dropIndex('users', 'idx_users_client_id', { ifExists: true });
   pgm.dropIndex('users', 'idx_users_email', { ifExists: true });
   pgm.dropIndex('users', 'idx_users_provider_provider_id', { ifExists: true });
 

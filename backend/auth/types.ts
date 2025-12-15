@@ -9,6 +9,7 @@ export interface User {
   picture?: string;
   provider: string;
   provider_id: string;
+  client_id?: string | null; // Reference to clients table
   created_at: Date;
   updated_at: Date;
 }
